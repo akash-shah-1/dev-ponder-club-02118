@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Eye, CheckCircle2, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { QuestionDetailDrawer } from "./QuestionDetailDrawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuestionCardProps {
   id: string;
@@ -23,9 +26,20 @@ interface QuestionCardProps {
 }
 
 const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp }: QuestionCardProps) => {
+  const isMobile = useIsMobile();
+  const [showDrawer, setShowDrawer] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isMobile) {
+      e.preventDefault();
+      setShowDrawer(true);
+    }
+  };
+
   return (
-    <Card className="p-3 md:p-6 hover:shadow-md transition-smooth border-l-4 border-l-transparent hover:border-l-primary">
-      <Link to={`/questions/${id}`} className="space-y-3 md:space-y-4 block">
+    <>
+      <Card className="p-3 md:p-6 hover:shadow-md transition-smooth border-l-4 border-l-transparent hover:border-l-primary">
+        <Link to={`/questions/${id}`} onClick={handleClick} className="space-y-3 md:space-y-4 block">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 md:gap-4">
           <div className="flex-1 space-y-1.5 md:space-y-2">
@@ -82,6 +96,15 @@ const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp }: Qu
         </div>
       </Link>
     </Card>
+
+    {isMobile && (
+      <QuestionDetailDrawer
+        open={showDrawer}
+        onOpenChange={setShowDrawer}
+        questionId={id}
+      />
+    )}
+    </>
   );
 };
 
