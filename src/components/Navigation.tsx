@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Search, User, Bell } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Search, User, Bell, Menu, Moon, Sun, BookOpen, Award, Settings, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import {
@@ -15,26 +15,79 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import NotificationPanel from "./NotificationPanel";
 import { useQuestions } from "@/hooks/useQuestions";
+import { cn } from "@/lib/utils";
+import { AskQuestionModal } from "./AskQuestionModal";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "next-themes";
 
 const Navigation = () => {
   const [open, setOpen] = useState(false);
+  const [showAskModal, setShowAskModal] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: questions = [] } = useQuestions();
+  const isMobile = useIsMobile();
+  const { theme, setTheme } = useTheme();
+
+  const menuItems = [
+    { icon: BookOpen, label: "Knowledge", path: "/knowledge" },
+    { icon: Award, label: "Leaderboard", path: "/leaderboard" },
+    { icon: Settings, label: "Profile", path: "/profile" },
+    { icon: HelpCircle, label: "Help & FAQ", path: "/help" },
+  ];
 
   return (
     <>
       <nav className="sticky top-0 z-50 border-b bg-card shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-              <div className="flex items-center justify-center w-8 h-8 rounded bg-primary text-primary-foreground">
-                <span className="text-lg">D</span>
-              </div>
-              <span className="hidden sm:inline">DevOverFlow</span>
-            </Link>
+            {/* Menu + Logo */}
+            <div className="flex items-center gap-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 w-64">
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg mb-4">Menu</h3>
+                    <div className="space-y-1">
+                      {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = location.pathname === item.path;
+                        
+                        return (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors",
+                              isActive
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                            <span>{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+                <div className="flex items-center justify-center w-8 h-8 rounded bg-primary text-primary-foreground">
+                  <span className="text-lg">D</span>
+                </div>
+                <span className="hidden sm:inline">DevOverFlow</span>
+              </Link>
+            </div>
 
             {/* Global Search */}
             <div className="flex-1 max-w-2xl hidden sm:block">
@@ -63,6 +116,14 @@ const Navigation = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-1 sm:gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              </Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
@@ -81,9 +142,13 @@ const Navigation = () => {
                   <User className="h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/ask" className="hidden sm:block">
-                <Button variant="default">Ask Question</Button>
-              </Link>
+              {isMobile ? (
+                <Button onClick={() => setShowAskModal(true)} variant="default" size="sm">Ask</Button>
+              ) : (
+                <Link to="/ask">
+                  <Button variant="default">Ask Question</Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -124,6 +189,8 @@ const Navigation = () => {
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      <AskQuestionModal open={showAskModal} onOpenChange={setShowAskModal} />
     </>
   );
 };

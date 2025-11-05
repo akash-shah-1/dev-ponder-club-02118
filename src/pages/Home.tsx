@@ -10,12 +10,14 @@ import { useCurrentUser } from "@/hooks/useUser";
 import { useQuestions } from "@/hooks/useQuestions";
 import { MessageSquare, Eye, ThumbsUp } from "lucide-react";
 import { AskQuestionModal } from "@/components/AskQuestionModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Home = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: questions, isLoading } = useQuestions();
   const [showAskModal, setShowAskModal] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const questionOfDay = questions?.[0];
   const interestingPosts = questions?.slice(1, 4) || [];
@@ -46,9 +48,11 @@ const Home = () => {
                   Find answers to your technical questions and help others answer theirs.
                 </p>
               </div>
-              <Button onClick={() => setShowAskModal(true)} className="ml-auto" size="sm">
-                Ask Question
-              </Button>
+              {!isMobile && (
+                <Button onClick={() => setShowAskModal(true)} className="ml-auto" size="sm">
+                  Ask Question
+                </Button>
+              )}
             </div>
 
             {/* Stats Section */}

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
@@ -6,6 +6,8 @@ import QuestionCard from "@/components/QuestionCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter } from "lucide-react";
+import { AskQuestionModal } from "@/components/AskQuestionModal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const mockQuestions = [
   {
@@ -75,6 +77,9 @@ const mockQuestions = [
 ];
 
 const Questions = () => {
+  const [showAskModal, setShowAskModal] = useState(false);
+  const isMobile = useIsMobile();
+
   return (
     <div className="min-h-screen bg-gradient-subtle pb-20 md:pb-0">
       <Navigation />
@@ -90,9 +95,9 @@ const Questions = () => {
                   Browse questions from the community
                 </p>
               </div>
-              <Link to="/ask">
-                <Button>Ask Question</Button>
-              </Link>
+              {!isMobile && (
+                <Button onClick={() => setShowAskModal(true)}>Ask Question</Button>
+              )}
             </div>
 
             {/* Filters */}
@@ -129,6 +134,8 @@ const Questions = () => {
           </div>
         </main>
       </div>
+      
+      <AskQuestionModal open={showAskModal} onOpenChange={setShowAskModal} />
       <MobileNav />
     </div>
   );

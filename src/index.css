@@ -30,6 +30,11 @@ All colors MUST be HSL.
     --accent: 158 64% 52%;
     --accent-foreground: 0 0% 100%;
 
+    /* Royal blue for innovation and trust */
+    --tertiary: 217 91% 60%;
+    --tertiary-foreground: 0 0% 100%;
+    --tertiary-hover: 217 91% 55%;
+
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
@@ -43,7 +48,7 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     /* Gradients for hero sections */
-    --gradient-hero: linear-gradient(135deg, hsl(24 94% 58%), hsl(33 100% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(24 94% 58%), hsl(217 91% 60%));
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
     
     /* Shadows */
@@ -70,23 +75,27 @@ All colors MUST be HSL.
     --primary-foreground: 0 0% 100%;
     --primary-hover: 24 94% 52%;
 
-    --secondary: 215 25% 27%;
+    --secondary: 215 25% 35%;
     --secondary-foreground: 210 40% 98%;
 
     --accent: 158 64% 52%;
     --accent-foreground: 0 0% 100%;
 
+    --tertiary: 217 91% 65%;
+    --tertiary-foreground: 0 0% 100%;
+    --tertiary-hover: 217 91% 60%;
+
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --destructive: 0 63% 31%;
+    --destructive: 0 63% 45%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 217 33% 25%;
+    --input: 217 33% 20%;
     --ring: 24 94% 58%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(24 94% 58%), hsl(33 100% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(24 94% 58%), hsl(217 91% 65%));
     --gradient-subtle: linear-gradient(180deg, hsl(222 47% 11%), hsl(217 33% 17%));
   }
 }
