@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import * as party from "party-js";
 
 interface AskQuestionModalProps {
   open: boolean;
@@ -76,6 +77,12 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
     };
     
     localStorage.setItem('questions', JSON.stringify([newQuestion, ...questions]));
+
+    // Trigger confetti effect
+    party.confetti(document.body, {
+      count: party.variation.range(60, 100),
+      spread: party.variation.range(40, 70),
+    });
 
     toast({
       title: "Question posted!",

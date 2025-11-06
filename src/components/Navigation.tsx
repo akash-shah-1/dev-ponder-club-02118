@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, User, Bell, Menu, Moon, Sun, BookOpen, Award, Settings, HelpCircle } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, Tag, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -26,183 +26,196 @@ import { AskQuestionModal } from "./AskQuestionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
 import { useCurrentUser } from "@/hooks/useUser";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Navigation = () => {
-  const [open, setOpen] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [showSearchDrawer, setShowSearchDrawer] = useState(false);
   const [showAskModal, setShowAskModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { data: questions = [] } = useQuestions();
   const { data: currentUser } = useCurrentUser();
+  const { notifications } = useNotifications();
   const isMobile = useIsMobile();
   const { theme, setTheme } = useTheme();
-
-  const menuItems = [
-    { icon: BookOpen, label: "Knowledge", path: "/knowledge" },
-    { icon: Award, label: "Leaderboard", path: "/leaderboard" },
-    { icon: HelpCircle, label: "Help & FAQ", path: "/help" },
-  ];
-
-  const handleSearch = () => {
-    if (isMobile) {
-      setShowSearchDrawer(true);
-    } else {
-      setOpen(true);
-    }
-  };
 
   return (
     <>
       <nav className="sticky top-0 z-50 border-b bg-card shadow-sm">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between gap-4">
-            {/* Menu + Logo */}
-            <div className="flex items-center gap-2">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72">
-                  <div className="p-6">
-                    {/* Logo in Menu */}
-                    <Link to="/" className="flex items-center gap-3 mb-6">
-                      <div className="flex items-center justify-center w-10 h-10 rounded bg-primary text-primary-foreground">
-                        <span className="text-xl font-bold">D</span>
+            {/* Mobile Menu Button */}
+            <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <div className="flex flex-col h-full">
+                  {/* Logo in Menu */}
+                  <div className="p-6 border-b border-border">
+                    <Link to="/" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-primary via-tertiary to-accent rounded-xl flex items-center justify-center shadow-lg">
+                        <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          <path d="M10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="white" opacity="0.8"/>
+                        </svg>
                       </div>
-                      <span className="font-bold text-xl">DevOverFlow</span>
-                    </Link>
-
-                    <Separator className="mb-6" />
-
-                    {/* Profile Section */}
-                    <Link to="/profile" className="block mb-6">
-                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={currentUser?.avatar} />
-                          <AvatarFallback>{currentUser?.name?.[0] || "U"}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="font-medium">{currentUser?.name || "User"}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {currentUser?.reputation || 0} reputation
-                          </div>
-                        </div>
+                      <div>
+                        <div className="font-bold text-lg text-foreground">Stack Overflow</div>
+                        <div className="text-xs text-muted-foreground">Developer Community</div>
                       </div>
                     </Link>
-
-                    <Separator className="mb-4" />
-
-                    {/* Theme Toggle */}
-                    <div className="mb-6">
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-sm font-medium">Theme</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                          className="gap-2"
-                        >
-                          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                          <span className="ml-5">{theme === "dark" ? "Dark" : "Light"}</span>
-                        </Button>
-                      </div>
+                  </div>
+                  
+                  {/* Menu Items */}
+                  <div className="flex-1 py-4">
+                    <div className="space-y-1 px-3">
+                      <Link 
+                        to="/" 
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Home className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium">Home</span>
+                      </Link>
+                      <Link 
+                        to="/questions" 
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium">Questions</span>
+                      </Link>
+                      <Link 
+                        to="/tags" 
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Tag className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium">Tags</span>
+                      </Link>
+                      <Link 
+                        to="/users" 
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium">Users</span>
+                      </Link>
                     </div>
-
-                    <Separator className="mb-4" />
-
-                    {/* Menu Items */}
-                    <div className="space-y-1">
-                      {menuItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = location.pathname === item.path;
-                        
-                        return (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            className={cn(
-                              "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors",
-                              isActive
-                                ? "bg-primary/10 text-primary font-medium"
-                                : "text-foreground hover:bg-muted"
-                            )}
-                          >
-                            <Icon className="h-5 w-5" />
-                            <span>{item.label}</span>
-                          </Link>
-                        );
-                      })}
+                    
+                    <div className="h-px bg-border my-4 mx-3" />
+                    
+                    {/* Theme Toggle */}
+                    <div className="px-3">
+                      <button
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        {theme === "dark" ? (
+                          <Sun className="h-5 w-5 text-muted-foreground" />
+                        ) : (
+                          <Moon className="h-5 w-5 text-muted-foreground" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                        </span>
+                      </button>
+                    </div>
+                    
+                    <div className="h-px bg-border my-4 mx-3" />
+                    
+                    {/* Profile */}
+                    <div className="px-3">
+                      <Link 
+                        to="/profile" 
+                        onClick={() => setShowMobileMenu(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Avatar className="h-8 w-8 border-2 border-primary/20">
+                          <AvatarImage src={currentUser?.avatar} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {currentUser?.name?.charAt(0) || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{currentUser?.name || "User"}</div>
+                          <div className="text-xs text-muted-foreground">View Profile</div>
+                        </div>
+                      </Link>
                     </div>
                   </div>
-                </SheetContent>
-              </Sheet>
-
-              <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-                <div className="flex items-center justify-center w-8 h-8 rounded bg-primary text-primary-foreground">
-                  <span className="text-lg">D</span>
                 </div>
-                <span className="hidden sm:inline">DevOverFlow</span>
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden md:flex items-center gap-1 flex-1">
+              <Link to="/knowledge">
+                <Button variant="ghost" size="sm">Knowledge</Button>
               </Link>
-            </div>
+              <Link to="/leaderboard">
+                <Button variant="ghost" size="sm">Leaderboard</Button>
+              </Link>
+              <Link to="/help">
+                <Button variant="ghost" size="sm">Help</Button>
+              </Link>
+            </nav>
 
-            {/* Global Search */}
-            <div className="flex-1 max-w-2xl hidden sm:block">
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-3">
+              {/* Desktop Search */}
               <Button
-                variant="outline"
-                className="w-full justify-start text-muted-foreground hover:text-foreground"
-                onClick={handleSearch}
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex"
+                onClick={() => setShowSearchDialog(true)}
               >
-                <Search className="mr-2 h-4 w-4" />
-                Search questions...
-                <kbd className="ml-auto pointer-events-none hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">⌘</span>K
-                </kbd>
+                <Search className="h-5 w-5" />
               </Button>
-            </div>
 
-            {/* Mobile Search Icon */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sm:hidden"
-              onClick={handleSearch}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
+              {/* Mobile Search */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                onClick={() => setShowSearchDrawer(true)}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
 
-            {/* Actions */}
-            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Notifications */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                      3
-                    </span>
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-medium rounded-full flex items-center justify-center">
+                        {notifications.filter(n => !n.read).length}
+                      </span>
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
+                <PopoverContent className="w-80 p-0" align="end">
                   <NotificationPanel />
                 </PopoverContent>
               </Popover>
-              {isMobile ? (
-                <Button onClick={() => setShowAskModal(true)} variant="default" size="sm">Ask</Button>
-              ) : (
-                <Link to="/ask">
-                  <Button variant="default">Ask Question</Button>
-                </Link>
-              )}
+
+              {/* Ask Question - Desktop */}
+              <Link to="/ask" className="hidden md:block">
+                <Button size="sm" className="ml-2">Ask Question</Button>
+              </Link>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Global Search Command Dialog - Desktop */}
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
         <CommandInput placeholder="Search questions, tags, users..." />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
@@ -211,7 +224,7 @@ const Navigation = () => {
               <CommandItem
                 key={question.id}
                 onSelect={() => {
-                  setOpen(false);
+                  setShowSearchDialog(false);
                   navigate(`/questions/${question.id}`);
                 }}
               >
@@ -221,16 +234,16 @@ const Navigation = () => {
             ))}
           </CommandGroup>
           <CommandGroup heading="Quick Links">
-            <CommandItem onSelect={() => { setOpen(false); navigate("/questions"); }}>
+            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/questions"); }}>
               Questions
             </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate("/tags"); }}>
+            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/tags"); }}>
               Tags
             </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate("/users"); }}>
+            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/users"); }}>
               Users
             </CommandItem>
-            <CommandItem onSelect={() => { setOpen(false); navigate("/ask"); }}>
+            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/ask"); }}>
               Ask Question
             </CommandItem>
           </CommandGroup>

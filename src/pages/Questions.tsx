@@ -8,8 +8,20 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Filter } from "lucide-react";
 import { AskQuestionModal } from "@/components/AskQuestionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useFilterPagination, FilterType } from "@/hooks/useFilterPagination";
 
-const mockQuestions = [
+interface Question {
+  id: string;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  author: { name: string; reputation: number };
+  stats: { views: number; answers: number; solved: boolean };
+  timestamp: string;
+  activity?: string;
+}
+
+const mockQuestions: Question[] = [
   {
     id: "1",
     title: "How to implement JWT authentication in React with proper token refresh?",
@@ -80,6 +92,37 @@ const Questions = () => {
   const [showAskModal, setShowAskModal] = useState(false);
   const isMobile = useIsMobile();
 
+  // Filter function for questions
+  const filterQuestions = (question: Question, filter: FilterType): boolean => {
+    switch (filter) {
+      case "newest":
+        return true; // Show all, sorted by newest
+      case "active":
+        return question.activity !== undefined;
+      case "unanswered":
+        return question.stats.answers === 0;
+      case "solved":
+        return question.stats.solved;
+      default:
+        return true;
+    }
+  };
+
+  const {
+    currentItems,
+    currentPage,
+    totalPages,
+    currentFilter,
+    setCurrentFilter,
+    setCurrentPage,
+    canGoNext,
+    canGoPrevious,
+  } = useFilterPagination({
+    items: mockQuestions,
+    itemsPerPage: 5,
+    filterFn: filterQuestions,
+  });
+
   return (
     <div className="min-h-screen bg-gradient-subtle pb-20 md:pb-0">
       <Navigation />
@@ -102,7 +145,7 @@ const Questions = () => {
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <Tabs defaultValue="newest" className="w-auto">
+              <Tabs value={currentFilter} onValueChange={(v) => setCurrentFilter(v as FilterType)} className="w-auto">
                 <TabsList>
                   <TabsTrigger value="newest">Newest</TabsTrigger>
                   <TabsTrigger value="active">Active</TabsTrigger>
@@ -118,19 +161,49 @@ const Questions = () => {
 
             {/* Questions List */}
             <div className="space-y-4">
-              {mockQuestions.map((question) => (
-                <QuestionCard key={question.id} {...question} />
-              ))}
+              {currentItems.length > 0 ? (
+                currentItems.map((question) => (
+                  <QuestionCard key={question.id} {...question} />
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  No questions found with the selected filter.
+                </div>
+              )}
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 pt-8">
-              <Button variant="outline" size="sm">Previous</Button>
-              <Button variant="outline" size="sm" className="bg-primary text-primary-foreground">1</Button>
-              <Button variant="outline" size="sm">2</Button>
-              <Button variant="outline" size="sm">3</Button>
-              <Button variant="outline" size="sm">Next</Button>
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-8">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={!canGoPrevious}
+                >
+                  Previous
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant="outline"
+                    size="sm"
+                    className={currentPage === page ? "bg-primary text-primary-foreground" : ""}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={!canGoNext}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </div>
         </main>
       </div>
