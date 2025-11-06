@@ -6,14 +6,14 @@ import { MobileNav } from "@/components/MobileNav";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Eye, CheckCircle2, TrendingUp, ArrowLeft } from "lucide-react";
+import { MessageSquare, Eye, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useVoting } from "@/hooks/useVoting";
 import { AnswerModal } from "@/components/AnswerModal";
 import { questionsService, Question } from "@/api";
-import { cn } from "@/lib/utils";
+import { VoteColumn } from "@/components/VoteColumn";
+import { AuthorInfo } from "@/components/AuthorInfo";
 
 const mockAnswers = [
   {
@@ -173,36 +173,14 @@ const QuestionDetail = () => {
             {/* Question */}
             <Card className="p-4 md:p-6">
               <div className="flex gap-3 md:gap-6">
-                {/* Vote column */}
-                <div className="flex flex-col items-center gap-1.5 md:gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 md:h-10 md:w-10",
-                      questionVoting.getVote(question.id) === 'up' ? 'text-primary' : ''
-                    )}
-                    onClick={() => questionVoting.vote(question.id, 'up')}
-                  >
-                    <ArrowBigUp className="h-5 w-5 md:h-6 md:w-6" />
-                  </Button>
-                  <span className="text-base md:text-lg font-semibold">
-                    {questionVoting.getScore(question.id, question.upvotes)}
-                  </span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 md:h-10 md:w-10",
-                      questionVoting.getVote(question.id) === 'down' ? 'text-destructive' : ''
-                    )}
-                    onClick={() => questionVoting.vote(question.id, 'down')}
-                  >
-                    <ArrowBigDown className="h-5 w-5 md:h-6 md:w-6" />
-                  </Button>
-                </div>
+                <VoteColumn
+                  itemId={question.id}
+                  initialScore={questionVoting.getScore(question.id, question.upvotes)}
+                  currentVote={questionVoting.getVote(question.id)}
+                  onUpvote={() => questionVoting.vote(question.id, 'up')}
+                  onDownvote={() => questionVoting.vote(question.id, 'down')}
+                />
 
-                {/* Content */}
                 <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
                   <h1 className="text-lg md:text-2xl font-bold break-words">{question.title}</h1>
                   
@@ -230,20 +208,13 @@ const QuestionDetail = () => {
                     ))}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 md:pt-4 gap-2">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <Avatar className="h-8 w-8 md:h-10 md:w-10">
-                        <AvatarImage src={question.author.avatar} />
-                        <AvatarFallback>{question.author.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-xs md:text-sm font-medium">{question.author.name}</div>
-                        <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
-                          <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                          {question.author.reputation} rep
-                        </div>
-                      </div>
-                    </div>
+                  <div className="pt-3 md:pt-4">
+                    <AuthorInfo
+                      name={question.author.name}
+                      avatar={question.author.avatar}
+                      reputation={question.author.reputation}
+                      avatarSize="lg"
+                    />
                   </div>
                 </div>
               </div>
@@ -256,39 +227,15 @@ const QuestionDetail = () => {
               {answers.map((answer) => (
                 <Card key={answer.id} className="p-4 md:p-6">
                   <div className="flex gap-3 md:gap-6">
-                    {/* Vote column */}
-                    <div className="flex flex-col items-center gap-1.5 md:gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8 md:h-10 md:w-10",
-                          answerVoting.getVote(answer.id) === 'up' ? 'text-primary' : ''
-                        )}
-                        onClick={() => answerVoting.vote(answer.id, 'up')}
-                      >
-                        <ArrowBigUp className="h-5 w-5 md:h-6 md:w-6" />
-                      </Button>
-                      <span className="text-base md:text-lg font-semibold">
-                        {answerVoting.getScore(answer.id, answer.upvotes)}
-                      </span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8 md:h-10 md:w-10",
-                          answerVoting.getVote(answer.id) === 'down' ? 'text-destructive' : ''
-                        )}
-                        onClick={() => answerVoting.vote(answer.id, 'down')}
-                      >
-                        <ArrowBigDown className="h-5 w-5 md:h-6 md:w-6" />
-                      </Button>
-                      {answer.isAccepted && (
-                        <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                      )}
-                    </div>
+                    <VoteColumn
+                      itemId={answer.id}
+                      initialScore={answerVoting.getScore(answer.id, answer.upvotes)}
+                      currentVote={answerVoting.getVote(answer.id)}
+                      onUpvote={() => answerVoting.vote(answer.id, 'up')}
+                      onDownvote={() => answerVoting.vote(answer.id, 'down')}
+                      isAccepted={answer.isAccepted}
+                    />
 
-                    {/* Content */}
                     <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
                       <div className="prose max-w-none">
                         <pre className="whitespace-pre-wrap font-sans text-xs md:text-sm overflow-x-auto">{answer.body}</pre>
@@ -296,19 +243,12 @@ const QuestionDetail = () => {
 
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 md:pt-4 border-t gap-2">
                         <span className="text-xs md:text-sm text-muted-foreground">{answer.timestamp}</span>
-                        <div className="flex items-center gap-2 md:gap-3">
-                          <Avatar className="h-7 w-7 md:h-8 md:w-8">
-                            <AvatarImage src={answer.author.avatar} />
-                            <AvatarFallback>{answer.author.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="text-xs md:text-sm font-medium">{answer.author.name}</div>
-                            <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1">
-                              <TrendingUp className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                              {answer.author.reputation} rep
-                            </div>
-                          </div>
-                        </div>
+                        <AuthorInfo
+                          name={answer.author.name}
+                          avatar={answer.author.avatar}
+                          reputation={answer.author.reputation}
+                          avatarSize="md"
+                        />
                       </div>
                     </div>
                   </div>
