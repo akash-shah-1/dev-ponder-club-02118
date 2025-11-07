@@ -6,6 +6,7 @@ import { MessageSquare, Eye, CheckCircle2, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { QuestionDetailDrawer } from "./QuestionDetailDrawer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { getAvatarUrl } from "@/lib/avatar";
 
 interface QuestionCardProps {
   id: string;
@@ -70,7 +71,7 @@ const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp }: Qu
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 md:pt-4 border-t gap-2">
           <div className="flex items-center gap-2 md:gap-4">
             <Avatar className="h-6 w-6 md:h-8 md:w-8">
-              <AvatarImage src={author.avatar} />
+              <AvatarImage src={author.avatar || getAvatarUrl(author.name)} />
               <AvatarFallback>{author.name[0]}</AvatarFallback>
             </Avatar>
             <div className="text-xs md:text-sm">

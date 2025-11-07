@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/avatar";
 
 interface AuthorInfoProps {
   name: string;
@@ -28,7 +29,7 @@ export const AuthorInfo = ({
   return (
     <div className={cn("flex items-center gap-2 md:gap-3", className)}>
       <Avatar className={sizeClasses[avatarSize]}>
-        <AvatarImage src={avatar} alt={name} />
+        <AvatarImage src={avatar || getAvatarUrl(name)} alt={name} />
         <AvatarFallback>{name[0]}</AvatarFallback>
       </Avatar>
       <div className="min-w-0">

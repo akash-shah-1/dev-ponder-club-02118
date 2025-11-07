@@ -27,6 +27,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "next-themes";
 import { useCurrentUser } from "@/hooks/useUser";
 import { useNotifications } from "@/hooks/useNotifications";
+import { getAvatarUrl } from "@/lib/avatar";
 
 const Navigation = () => {
   const [showSearchDialog, setShowSearchDialog] = useState(false);
@@ -121,7 +122,7 @@ const Navigation = () => {
                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
                       >
                         <Avatar className="h-8 w-8 border-2 border-primary/20">
-                          <AvatarImage src={currentUser?.avatar} />
+                          <AvatarImage src={currentUser?.avatar || getAvatarUrl(currentUser?.name || 'User')} />
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
                             {currentUser?.name?.charAt(0) || "U"}
                           </AvatarFallback>
@@ -187,7 +188,7 @@ const Navigation = () => {
 
               <Link to="/profile">
                 <Avatar className="h-8 w-8 cursor-pointer">
-                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarImage src={currentUser?.avatar || getAvatarUrl(currentUser?.name || 'User')} />
                   <AvatarFallback>{currentUser?.name?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
               </Link>

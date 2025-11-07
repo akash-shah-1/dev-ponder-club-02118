@@ -11,6 +11,7 @@ import { useVoting } from "@/hooks/useVoting";
 import { AnswerModal } from "@/components/AnswerModal";
 import { questionsService, Question } from "@/api";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/avatar";
 
 interface QuestionDetailDrawerProps {
   open: boolean;
@@ -210,7 +211,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
                   <div className="flex items-center gap-2 pt-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={question.author.avatar} />
+                      <AvatarImage src={question.author.avatar || getAvatarUrl(question.author.name)} />
                       <AvatarFallback>{question.author.name[0]}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -274,7 +275,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                         <span className="text-xs text-muted-foreground">{answer.timestamp}</span>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={answer.author.avatar} />
+                            <AvatarImage src={answer.author.avatar || getAvatarUrl(answer.author.name)} />
                             <AvatarFallback>{answer.author.name[0]}</AvatarFallback>
                           </Avatar>
                           <div>

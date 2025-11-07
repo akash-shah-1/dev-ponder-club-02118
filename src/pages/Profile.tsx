@@ -10,6 +10,7 @@ import { MapPin, Link as LinkIcon, Calendar, Award, TrendingUp } from "lucide-re
 import { useCurrentUser } from "@/hooks/useUser";
 import QuestionCard from "@/components/QuestionCard";
 import { useQuestions } from "@/hooks/useQuestions";
+import { getAvatarUrl } from "@/lib/avatar";
 
 const Profile = () => {
   const { data: user } = useCurrentUser();
@@ -27,7 +28,7 @@ const Profile = () => {
               <CardHeader className="p-4 md:p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6">
                   <Avatar className="h-20 w-20 sm:h-24 sm:w-24 md:h-32 md:w-32 flex-shrink-0">
-                    <AvatarImage src={user?.avatar} />
+                    <AvatarImage src={user?.avatar || getAvatarUrl(user?.name || 'User')} />
                     <AvatarFallback className="text-xl sm:text-2xl md:text-4xl">
                       {user?.name?.[0] || "U"}
                     </AvatarFallback>

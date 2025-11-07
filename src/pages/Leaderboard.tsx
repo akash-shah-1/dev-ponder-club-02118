@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { usersService } from "@/api";
+import { getAvatarUrl } from "@/lib/avatar";
 
 const Leaderboard = () => {
   const { data: topUsers = [] } = useQuery({
@@ -92,7 +93,7 @@ const Leaderboard = () => {
                           {getRankIcon(index) || `#${index + 1}`}
                         </div>
                         <Avatar className="h-12 w-12">
-                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarImage src={user.avatar || getAvatarUrl(user.name)} alt={user.name} />
                           <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">

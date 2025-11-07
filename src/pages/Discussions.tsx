@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDiscussions } from "@/hooks/useDiscussions";
 import { formatDistanceToNow } from "date-fns";
+import { getAvatarUrl } from "@/lib/avatar";
 
 const Discussions = () => {
   const { data: discussions, isLoading } = useDiscussions();
@@ -74,7 +75,7 @@ const Discussions = () => {
                           <CardDescription className="flex flex-wrap items-center gap-3">
                             <div className="flex items-center gap-2">
                               <Avatar className="h-5 w-5">
-                                <AvatarImage src={discussion.author.avatar} />
+                                <AvatarImage src={discussion.author.avatar || getAvatarUrl(discussion.author.name)} />
                                 <AvatarFallback>{discussion.author.name[0]}</AvatarFallback>
                               </Avatar>
                               <span>{discussion.author.name}</span>
