@@ -8,8 +8,6 @@ export const MobileNav = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: MessageSquare, label: "Questions", path: "/questions" },
-    { icon: Tag, label: "Tags", path: "/tags" },
-    { icon: Users, label: "Users", path: "/users" },
   ];
 
   return (

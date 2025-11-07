@@ -8,13 +8,10 @@ const Sidebar = () => {
   const mainNavItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: MessageSquare, label: "Questions", path: "/questions" },
-    { icon: Tag, label: "Tags", path: "/tags" },
   ];
 
   const secondaryNavItems = [
     { icon: Bookmark, label: "Saves", path: "/saves" },
-    { icon: Users, label: "Users", path: "/users" },
-    { icon: Building2, label: "Companies", path: "/companies" },
   ];
 
   const labsItems = [

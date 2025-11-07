@@ -47,7 +47,7 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim() || !body.trim() || tags.length === 0 || !category) {
@@ -78,6 +78,11 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
     
     localStorage.setItem('questions', JSON.stringify([newQuestion, ...questions]));
 
+    onOpenChange(false);
+
+    // Small delay to ensure modal closes before confetti
+    await new Promise(resolve => setTimeout(resolve, 100));
+
     // Trigger confetti effect
     party.confetti(document.body, {
       count: party.variation.range(60, 100),
@@ -93,7 +98,6 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
     setBody("");
     setCategory("");
     setTags([]);
-    onOpenChange(false);
     navigate("/questions");
   };
 

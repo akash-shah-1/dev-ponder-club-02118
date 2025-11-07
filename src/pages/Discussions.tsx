@@ -5,41 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-
-const mockDiscussions = [
-  {
-    id: 1,
-    title: "What's your favorite React state management solution?",
-    author: { name: "Alice Chen", avatar: "" },
-    replies: 24,
-    views: 1200,
-    tags: ["React", "State Management"],
-    timeAgo: "2 hours ago",
-    trending: true,
-  },
-  {
-    id: 2,
-    title: "Best practices for API security in 2024",
-    author: { name: "Bob Smith", avatar: "" },
-    replies: 18,
-    views: 850,
-    tags: ["Security", "API"],
-    timeAgo: "5 hours ago",
-    trending: false,
-  },
-  {
-    id: 3,
-    title: "Microservices vs Monolith - When to choose what?",
-    author: { name: "Carol Wang", avatar: "" },
-    replies: 42,
-    views: 2100,
-    tags: ["Architecture", "Microservices"],
-    timeAgo: "1 day ago",
-    trending: true,
-  },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDiscussions } from "@/hooks/useDiscussions";
+import { formatDistanceToNow } from "date-fns";
 
 const Discussions = () => {
+  const { data: discussions, isLoading } = useDiscussions();
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -59,55 +31,80 @@ const Discussions = () => {
               Open-ended conversations about software development
             </p>
 
-            <div className="grid gap-4">
-              {mockDiscussions.map((discussion) => (
-                <Card key={discussion.id} className="hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          {discussion.trending && (
-                            <Badge variant="default" className="gap-1">
-                              <TrendingUp className="h-3 w-3" />
-                              Trending
-                            </Badge>
-                          )}
+            {isLoading ? (
+              <div className="grid gap-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="p-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                      <Skeleton className="h-6 w-3/4" />
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-5 w-5 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <Skeleton className="h-6 w-16" />
+                          <Skeleton className="h-6 w-20" />
                         </div>
-                        <CardTitle className="text-lg mb-2">{discussion.title}</CardTitle>
-                        <CardDescription className="flex flex-wrap items-center gap-3">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-5 w-5">
-                              <AvatarImage src={discussion.author.avatar} />
-                              <AvatarFallback>{discussion.author.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <span>{discussion.author.name}</span>
+                        <Skeleton className="h-4 w-24" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {discussions?.map((discussion) => (
+                  <Card key={discussion.id} className="hover:border-primary/50 transition-colors cursor-pointer">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {discussion.isPinned && (
+                              <Badge variant="default" className="gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                Pinned
+                              </Badge>
+                            )}
                           </div>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {discussion.timeAgo}
-                          </span>
-                        </CardDescription>
+                          <CardTitle className="text-lg mb-2">{discussion.title}</CardTitle>
+                          <CardDescription className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={discussion.author.avatar} />
+                                <AvatarFallback>{discussion.author.name[0]}</AvatarFallback>
+                              </Avatar>
+                              <span>{discussion.author.name}</span>
+                            </div>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDistanceToNow(new Date(discussion.createdAt), { addSuffix: true })}
+                            </span>
+                          </CardDescription>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-wrap gap-2">
-                        {discussion.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary">
-                            {tag}
-                          </Badge>
-                        ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2">
+                          {discussion.tags.map((tag) => (
+                            <Badge key={tag} variant="secondary">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{discussion.replyCount} replies</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{discussion.replies} replies</span>
-                        <span>{discussion.views} views</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>

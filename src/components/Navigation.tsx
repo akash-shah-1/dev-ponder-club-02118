@@ -73,40 +73,24 @@ const Navigation = () => {
                   
                   {/* Menu Items */}
                   <div className="flex-1 py-4">
-                    <div className="space-y-1 px-3">
-                      <Link 
-                        to="/" 
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
-                      >
-                        <Home className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">Home</span>
-                      </Link>
-                      <Link 
-                        to="/questions" 
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
-                      >
-                        <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">Questions</span>
-                      </Link>
-                      <Link 
-                        to="/tags" 
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
-                      >
-                        <Tag className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">Tags</span>
-                      </Link>
-                      <Link 
-                        to="/users" 
-                        onClick={() => setShowMobileMenu(false)}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
-                      >
-                        <Users className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm font-medium">Users</span>
-                      </Link>
-                    </div>
+                  <div className="space-y-1 px-3">
+                    <Link 
+                      to="/" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <Home className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Home</span>
+                    </Link>
+                    <Link 
+                      to="/questions" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Questions</span>
+                    </Link>
+                  </div>
                     
                     <div className="h-px bg-border my-4 mx-3" />
                     
@@ -155,9 +139,6 @@ const Navigation = () => {
 
             {/* Desktop Navigation Links */}
             <nav className="hidden md:flex items-center gap-1 flex-1">
-              <Link to="/knowledge">
-                <Button variant="ghost" size="sm">Knowledge</Button>
-              </Link>
               <Link to="/leaderboard">
                 <Button variant="ghost" size="sm">Leaderboard</Button>
               </Link>
@@ -167,28 +148,15 @@ const Navigation = () => {
             </nav>
 
             {/* Right Side Actions */}
-            <div className="flex items-center gap-3">
-              {/* Desktop Search */}
+            <div className="hidden md:flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex"
                 onClick={() => setShowSearchDialog(true)}
               >
                 <Search className="h-5 w-5" />
               </Button>
 
-              {/* Mobile Search */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setShowSearchDrawer(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-
-              {/* Notifications */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
@@ -205,10 +173,51 @@ const Navigation = () => {
                 </PopoverContent>
               </Popover>
 
-              {/* Ask Question - Desktop */}
-              <Link to="/ask" className="hidden md:block">
-                <Button size="sm" className="ml-2">Ask Question</Button>
+              <Link to="/ask">
+                <Button size="sm" className="whitespace-nowrap">Ask Question</Button>
               </Link>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </Button>
+
+              <Link to="/profile">
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+              </Link>
+            </div>
+
+            {/* Mobile Actions */}
+            <div className="flex md:hidden items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSearchDrawer(true)}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground text-[10px] font-medium rounded-full flex items-center justify-center">
+                        {notifications.filter(n => !n.read).length}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <NotificationPanel />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
@@ -236,12 +245,6 @@ const Navigation = () => {
           <CommandGroup heading="Quick Links">
             <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/questions"); }}>
               Questions
-            </CommandItem>
-            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/tags"); }}>
-              Tags
-            </CommandItem>
-            <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/users"); }}>
-              Users
             </CommandItem>
             <CommandItem onSelect={() => { setShowSearchDialog(false); navigate("/ask"); }}>
               Ask Question
@@ -291,18 +294,6 @@ const Navigation = () => {
                     className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors text-sm"
                   >
                     Questions
-                  </button>
-                  <button
-                    onClick={() => { setShowSearchDrawer(false); navigate("/tags"); }}
-                    className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors text-sm"
-                  >
-                    Tags
-                  </button>
-                  <button
-                    onClick={() => { setShowSearchDrawer(false); navigate("/users"); }}
-                    className="w-full text-left p-3 rounded-md hover:bg-muted transition-colors text-sm"
-                  >
-                    Users
                   </button>
                 </div>
               </div>
