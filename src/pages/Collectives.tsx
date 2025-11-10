@@ -60,7 +60,11 @@ const Collectives = () => {
             ) : (
               <div className="grid gap-4">
                 {collectives?.map((collective) => (
-                  <Card key={collective.id}>
+                  <Card 
+                    key={collective.id}
+                    className="hover:border-primary/50 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/collectives/${collective.id}`}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">

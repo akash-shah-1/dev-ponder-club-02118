@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, Tag, Users } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, MessageCircle, BookOpen, Bookmark, Trophy, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -66,7 +66,7 @@ const Navigation = () => {
                         </svg>
                       </div>
                       <div>
-                        <div className="font-bold text-lg text-foreground">Stack Overflow</div>
+                        <div className="font-bold text-lg text-foreground">DevOverflow</div>
                         <div className="text-xs text-muted-foreground">Developer Community</div>
                       </div>
                     </Link>
@@ -90,6 +90,46 @@ const Navigation = () => {
                     >
                       <MessageSquare className="h-5 w-5 text-muted-foreground" />
                       <span className="text-sm font-medium">Questions</span>
+                    </Link>
+                    <Link 
+                      to="/discussions" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Discussions</span>
+                    </Link>
+                    <Link 
+                      to="/collectives" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <BookOpen className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Collectives</span>
+                    </Link>
+                    <Link 
+                      to="/saves" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <Bookmark className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Saves</span>
+                    </Link>
+                    <Link 
+                      to="/leaderboard" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <Trophy className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Leaderboard</span>
+                    </Link>
+                    <Link 
+                      to="/help" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Help</span>
                     </Link>
                   </div>
                     
@@ -138,15 +178,27 @@ const Navigation = () => {
               </SheetContent>
             </Sheet>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1 flex-1">
-              <Link to="/leaderboard">
-                <Button variant="ghost" size="sm">Leaderboard</Button>
+            {/* Desktop Logo and Navigation Links */}
+            <div className="hidden md:flex items-center gap-4 flex-1">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary via-tertiary to-accent rounded-xl flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                    <path d="M10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="white" opacity="0.8"/>
+                  </svg>
+                </div>
+                <span className="font-bold text-lg">DevOverflow</span>
               </Link>
-              <Link to="/help">
-                <Button variant="ghost" size="sm">Help</Button>
-              </Link>
-            </nav>
+              
+              <nav className="flex items-center gap-1 ml-auto">
+                <Link to="/leaderboard">
+                  <Button variant="ghost" size="sm">Leaderboard</Button>
+                </Link>
+                <Link to="/help">
+                  <Button variant="ghost" size="sm">Help</Button>
+                </Link>
+              </nav>
+            </div>
 
             {/* Right Side Actions */}
             <div className="hidden md:flex items-center gap-3">

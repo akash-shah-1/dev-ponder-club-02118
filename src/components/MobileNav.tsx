@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, MessageSquare, Tag, Users } from "lucide-react";
+import { Home, MessageSquare, MessageCircle, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const MobileNav = () => {
@@ -8,6 +8,8 @@ export const MobileNav = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: MessageSquare, label: "Questions", path: "/questions" },
+    { icon: MessageCircle, label: "Discussions", path: "/discussions" },
+    { icon: BookOpen, label: "Collectives", path: "/collectives" },
   ];
 
   return (

@@ -59,7 +59,11 @@ const Discussions = () => {
             ) : (
               <div className="grid gap-4">
                 {discussions?.map((discussion) => (
-                  <Card key={discussion.id} className="hover:border-primary/50 transition-colors cursor-pointer">
+                  <Card 
+                    key={discussion.id} 
+                    className="hover:border-primary/50 transition-colors cursor-pointer"
+                    onClick={() => window.location.href = `/discussions/${discussion.id}`}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
