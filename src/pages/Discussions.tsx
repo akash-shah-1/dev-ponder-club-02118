@@ -1,5 +1,9 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
+import { MobileNav } from "@/components/MobileNav";
+import { StartDiscussionModal } from "@/components/StartDiscussionModal";
 import { MessageCircle, TrendingUp, Clock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,23 +16,25 @@ import { getAvatarUrl } from "@/lib/avatar";
 
 const Discussions = () => {
   const { data: discussions, isLoading } = useDiscussions();
+  const [showStartModal, setShowStartModal] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-6">
       <Navigation />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6">
           <div className="max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-6 w-6 text-primary" />
-                <h1 className="text-3xl font-bold">Discussions</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">Discussions</h1>
               </div>
-              <Button>Start Discussion</Button>
+              <Button onClick={() => setShowStartModal(true)}>Start Discussion</Button>
             </div>
 
-            <p className="text-muted-foreground mb-6">
+            <p className="text-sm md:text-base text-muted-foreground mb-6">
               Open-ended conversations about software development
             </p>
 
@@ -62,7 +68,7 @@ const Discussions = () => {
                   <Card 
                     key={discussion.id} 
                     className="hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `/discussions/${discussion.id}`}
+                    onClick={() => navigate(`/discussions/${discussion.id}`)}
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -113,6 +119,8 @@ const Discussions = () => {
           </div>
         </main>
       </div>
+      <MobileNav />
+      <StartDiscussionModal open={showStartModal} onOpenChange={setShowStartModal} />
     </div>
   );
 };

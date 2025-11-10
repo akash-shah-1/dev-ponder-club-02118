@@ -12,6 +12,8 @@ import Leaderboard from "./pages/Leaderboard";
 import Saves from "./pages/Saves";
 import Discussions from "./pages/Discussions";
 import Collectives from "./pages/Collectives";
+import DiscussionDetail from "./pages/DiscussionDetail";
+import CollectiveDetail from "./pages/CollectiveDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Help from "./pages/Help";
@@ -33,7 +35,9 @@ const App = () => (
             <Route path="/ask" element={<AskQuestion />} />
             <Route path="/saves" element={<Saves />} />
             <Route path="/discussions" element={<Discussions />} />
+            <Route path="/discussions/:id" element={<DiscussionDetail />} />
             <Route path="/collectives" element={<Collectives />} />
+            <Route path="/collectives/:id" element={<CollectiveDetail />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/help" element={<Help />} />
