@@ -138,9 +138,7 @@ const Questions = () => {
                   Browse questions from the community
                 </p>
               </div>
-              {!isMobile && (
-                <Button onClick={() => setShowAskModal(true)}>Ask Question</Button>
-              )}
+              <Button onClick={() => setShowAskModal(true)}>Ask Question</Button>
             </div>
 
             {/* Filters */}

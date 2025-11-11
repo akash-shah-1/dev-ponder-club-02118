@@ -1,6 +1,9 @@
 import { Question } from '../types';
 import { mockUsers } from './users.mock';
 
+// Current user ID for demo purposes
+export const CURRENT_USER_ID = '1';
+
 export const mockQuestions: Question[] = [
   {
     id: '1',
@@ -119,5 +122,51 @@ export const mockQuestions: Question[] = [
     solved: true,
     acceptedAnswerId: 'a3',
     status: 'solved',
+  },
+  {
+    id: '6',
+    title: 'React Context API performance issues with large state',
+    description: 'I\'m using React Context API for global state management but experiencing performance issues. Should I split into multiple contexts or use a different solution?',
+    excerpt: 'I\'m using React Context API for global state but experiencing performance issues.',
+    tags: ['react', 'performance', 'state-management'],
+    category: 'frontend',
+    authorId: CURRENT_USER_ID,
+    author: {
+      id: mockUsers[0].id,
+      name: mockUsers[0].name,
+      avatar: mockUsers[0].avatar,
+      reputation: mockUsers[0].reputation,
+    },
+    createdAt: '2024-03-02T11:00:00Z',
+    updatedAt: '2024-03-02T11:00:00Z',
+    views: 89,
+    upvotes: 4,
+    downvotes: 0,
+    answerCount: 2,
+    solved: false,
+    status: 'open',
+  },
+  {
+    id: '7',
+    title: 'How to implement infinite scroll with React Query?',
+    description: 'I need to implement infinite scroll pagination using React Query. What\'s the best approach to handle page management and caching?',
+    excerpt: 'Need help implementing infinite scroll with React Query.',
+    tags: ['react', 'react-query', 'pagination'],
+    category: 'frontend',
+    authorId: CURRENT_USER_ID,
+    author: {
+      id: mockUsers[0].id,
+      name: mockUsers[0].name,
+      avatar: mockUsers[0].avatar,
+      reputation: mockUsers[0].reputation,
+    },
+    createdAt: '2024-03-01T16:30:00Z',
+    updatedAt: '2024-03-01T16:30:00Z',
+    views: 156,
+    upvotes: 7,
+    downvotes: 0,
+    answerCount: 3,
+    solved: false,
+    status: 'open',
   },
 ];

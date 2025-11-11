@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { useVoting } from "@/hooks/useVoting";
 import { AnswerModal } from "@/components/AnswerModal";
 import { questionsService, Question } from "@/api";
+import { CURRENT_USER_ID } from "@/api/mock/questions.mock";
 import { VoteColumn } from "@/components/VoteColumn";
 import { AuthorInfo } from "@/components/AuthorInfo";
 import * as party from "party-js";
@@ -231,7 +232,7 @@ const QuestionDetail = () => {
                 <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <h1 className="text-lg md:text-2xl font-bold break-words flex-1">{question.title}</h1>
-                    {!question.solved && (
+                    {!question.solved && question.authorId === CURRENT_USER_ID && (
                       <Button 
                         onClick={handleMarkSolved}
                         variant="outline"
@@ -239,7 +240,7 @@ const QuestionDetail = () => {
                         className="gap-2 shrink-0"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        Mark Solved
+                        Resolve
                       </Button>
                     )}
                     {question.solved && (

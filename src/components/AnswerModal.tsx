@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,10 @@ interface AnswerModalProps {
 export const AnswerModal = ({ open, onOpenChange, questionId, onAnswerSubmitted }: AnswerModalProps) => {
   const isMobile = useIsMobile();
   const [answerText, setAnswerText] = useState("");
+
+  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAnswerText(e.target.value);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +65,7 @@ export const AnswerModal = ({ open, onOpenChange, questionId, onAnswerSubmitted 
           id="answer"
           placeholder="Write your answer here... Include code examples and explanations."
           value={answerText}
-          onChange={(e) => setAnswerText(e.target.value)}
+          onChange={handleTextChange}
           rows={12}
           className="resize-none font-mono text-sm"
         />

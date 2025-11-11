@@ -1,8 +1,8 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
-import { BookOpen, Users, Award, MessageSquare } from "lucide-react";
+import { BookOpen, Users, Award, MessageSquare, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useCollective } from "@/hooks/useCollectives";
 
 const CollectiveDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: collective, isLoading } = useCollective(id || "");
 
   if (isLoading) {
@@ -52,6 +53,16 @@ const CollectiveDetail = () => {
         <Sidebar />
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-5xl mx-auto">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate(-1)}
+              className="gap-2 mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            
             <Card className="mb-6">
               <CardHeader>
                 <div className="flex flex-col md:flex-row md:items-start gap-4">

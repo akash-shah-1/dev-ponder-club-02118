@@ -1,8 +1,8 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
-import { MessageCircle, Clock, ThumbsUp } from "lucide-react";
+import { MessageCircle, Clock, ThumbsUp, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import { getAvatarUrl } from "@/lib/avatar";
 
 const DiscussionDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: discussion, isLoading } = useDiscussion(id || "");
 
   if (isLoading) {
@@ -55,6 +56,16 @@ const DiscussionDetail = () => {
         <Sidebar />
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-4xl mx-auto space-y-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate(-1)}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-2 mb-2">
