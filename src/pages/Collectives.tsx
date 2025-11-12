@@ -72,14 +72,14 @@ const Collectives = () => {
                     onClick={() => navigate(`/collectives/${collective.id}`)}
                   >
                     <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center text-3xl">
+                      <div className="flex flex-col md:flex-row items-start md:items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 md:gap-4 flex-1 min-w-0">
+                          <div className="h-12 w-12 md:h-14 md:w-14 rounded-lg bg-primary/10 flex items-center justify-center text-2xl md:text-3xl shrink-0">
                             {collective.name[0]}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <CardTitle>{collective.name}</CardTitle>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <CardTitle className="text-lg md:text-xl">{collective.name}</CardTitle>
                               {collective.isOfficial && (
                                 <Badge variant="default" className="gap-1">
                                   <Award className="h-3 w-3" />
@@ -87,7 +87,7 @@ const Collectives = () => {
                                 </Badge>
                               )}
                             </div>
-                            <CardDescription className="flex items-center gap-4 mt-2">
+                            <CardDescription className="flex flex-wrap items-center gap-3 md:gap-4 mt-2 text-xs md:text-sm">
                               <span className="flex items-center gap-1">
                                 <Users className="h-3 w-3" />
                                 {collective.memberCount} members
@@ -99,7 +99,7 @@ const Collectives = () => {
                             </CardDescription>
                           </div>
                         </div>
-                        <Button>Join</Button>
+                        <Button className="w-full md:w-auto shrink-0">Join</Button>
                       </div>
                     </CardHeader>
                     <CardContent>
