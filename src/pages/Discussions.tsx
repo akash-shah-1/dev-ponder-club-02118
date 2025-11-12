@@ -26,12 +26,12 @@ const Discussions = () => {
         <Sidebar />
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-5xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-2">
-                <MessageCircle className="h-6 w-6 text-primary" />
-                <h1 className="text-2xl md:text-3xl font-bold">Discussions</h1>
+                <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                <h1 className="text-xl md:text-3xl font-bold">Discussions</h1>
               </div>
-              <Button onClick={() => setShowStartModal(true)}>Start Discussion</Button>
+              <Button onClick={() => setShowStartModal(true)} className="shrink-0">Start Discussion</Button>
             </div>
 
             <p className="text-sm md:text-base text-muted-foreground mb-6">
