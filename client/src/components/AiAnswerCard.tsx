@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Bot } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Bot, ChevronDown, ChevronUp } from "lucide-react";
 
 interface AiAnswerCardProps {
   answer: string;
@@ -65,6 +67,9 @@ const renderMarkdown = (text: string) => {
 };
 
 export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxHeight = 400; // Max height in pixels before showing expand button
+  
   return (
     <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800 shadow-lg">
       <div className="flex items-start gap-3 mb-4">
@@ -111,8 +116,36 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
         </div>
       )}
 
-      <div className="prose prose-sm md:prose-base max-w-none text-sm md:text-base">
+      <div 
+        className="prose prose-sm md:prose-base max-w-none text-sm md:text-base relative overflow-hidden transition-all duration-300"
+        style={{ maxHeight: isExpanded ? 'none' : `${maxHeight}px` }}
+      >
         {renderMarkdown(answer)}
+        {!isExpanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-purple-50 via-purple-50/80 to-transparent dark:from-purple-950/20 dark:via-purple-950/10" />
+        )}
+      </div>
+
+      {/* Expand/Collapse Button */}
+      <div className="flex justify-center mt-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="gap-2 text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-purple-100"
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              Show Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              Show More
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="mt-4 pt-4 border-t border-purple-200 dark:border-purple-800">

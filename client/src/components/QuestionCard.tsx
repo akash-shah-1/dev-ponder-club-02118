@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Eye, CheckCircle2, TrendingUp } from "lucide-react";
+import { MessageSquare, Eye, CheckCircle2, TrendingUp, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { QuestionDetailDrawer } from "./QuestionDetailDrawer";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,9 +24,10 @@ interface QuestionCardProps {
     solved: boolean;
   };
   timestamp: string;
+  hasAiAnswer?: boolean;
 }
 
-const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp }: QuestionCardProps) => {
+const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp, hasAiAnswer }: QuestionCardProps) => {
   const isMobile = useIsMobile();
   const [showDrawer, setShowDrawer] = useState(false);
 
@@ -44,11 +45,17 @@ const QuestionCard = ({ id, title, excerpt, tags, author, stats, timestamp }: Qu
         {/* Header */}
         <div className="flex items-start justify-between gap-3 md:gap-4">
           <div className="flex-1 space-y-1.5 md:space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {stats.solved && (
                 <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 text-accent flex-shrink-0" />
               )}
-              <h3 className="text-sm md:text-lg font-semibold hover:text-primary transition-smooth line-clamp-2">
+              {hasAiAnswer && (
+                <Badge variant="secondary" className="gap-1 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 text-xs">
+                  <Sparkles className="h-3 w-3" />
+                  AI
+                </Badge>
+              )}
+              <h3 className="text-sm md:text-lg font-semibold hover:text-primary transition-smooth line-clamp-2 flex-1">
                 {title}
               </h3>
             </div>

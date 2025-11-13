@@ -140,7 +140,7 @@ Your Response:`;
 
   private detectNeedForDiagram(title: string, description: string): boolean {
     const text = `${title} ${description}`.toLowerCase();
-    
+
     // Keywords that suggest visual diagrams would be helpful
     const diagramKeywords = [
       'architecture', 'flow', 'diagram', 'structure', 'design pattern',
@@ -149,44 +149,44 @@ Your Response:`;
       'relationship between', 'hierarchy', 'sequence', 'pipeline',
       'visualization', 'graph', 'tree structure', 'network',
     ];
-    
+
     return diagramKeywords.some(keyword => text.includes(keyword));
   }
 
   async generateDetailedAnswer(questionId: string, questionTitle: string, questionDescription: string) {
     // Detect if question needs visual diagrams
     const needsDiagram = this.detectNeedForDiagram(questionTitle, questionDescription);
-    
+
     // Try multiple models in order of preference
-    const models = needsDiagram 
+    const models = needsDiagram
       ? [
-          'gemini-2.0-flash-preview-image-generation', // For diagrams
-          this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
-          'gemini-2.5-flash',
-        ]
+        'gemini-2.0-flash-preview-image-generation', // For diagrams
+        this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
+        'gemini-2.5-flash',
+      ]
       : [
-          this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
-          'gemini-2.5-flash-lite', // Fallback 1: Most stable
-          'gemini-2.0-flash-lite', // Fallback 2: Good availability
-        ];
-    
+        this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
+        'gemini-2.5-flash-lite', // Fallback 1: Most stable
+        'gemini-2.0-flash-lite', // Fallback 2: Good availability
+      ];
+
     let lastError;
 
     for (const modelName of models) {
       const maxRetries = 2; // 2 retries per model
-      
+
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           this.logger.log(`Attempting to generate answer with ${modelName} (attempt ${attempt}/${maxRetries})${needsDiagram ? ' [Diagram mode]' : ''}`);
-          
+
           const detailedModel = this.genAI.getGenerativeModel({
             model: modelName
           });
 
           // Build a detailed prompt for comprehensive answer with examples
           const isImageModel = modelName.includes('image-generation');
-          
-          const prompt = isImageModel 
+
+          const prompt = isImageModel
             ? `You are an expert programming tutor with the ability to create visual diagrams. Provide a comprehensive answer to this coding question with BOTH text explanation AND visual diagrams.
 
 Question: ${questionTitle}
@@ -258,11 +258,11 @@ Provide a thorough, educational response that helps the developer truly understa
 
           const result = await detailedModel.generateContent(prompt);
           const response = await result.response;
-          
+
           // Extract text and images (if any)
           const text = response.text();
           const images: string[] = [];
-          
+
           // Check if response has images (for image generation model)
           if (isImageModel && response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
@@ -275,7 +275,7 @@ Provide a thorough, educational response that helps the developer truly understa
           }
 
           this.logger.log(`✅ Successfully generated answer with ${modelName}${images.length > 0 ? ` (${images.length} images)` : ''}`);
-          
+
           return {
             answer: text,
             model: modelName,
@@ -300,7 +300,7 @@ Provide a thorough, educational response that helps the developer truly understa
           break;
         }
       }
-      
+
       // If we get here, all retries for this model failed, try next model
       this.logger.log(`All retries failed for ${modelName}, trying next model...`);
     }

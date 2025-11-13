@@ -278,34 +278,37 @@ const QuestionDetail = () => {
                 <h2 className="text-lg md:text-xl font-bold">
                   {question.answers?.length || 0} {question.answers?.length === 1 ? 'Answer' : 'Answers'}
                 </h2>
-                <Button
-                  onClick={handleGetAiAnswer}
-                  disabled={isGeneratingAi || !!aiAnswer}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950"
-                >
-                  {isGeneratingAi ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : aiAnswer ? (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      AI Answer Generated
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" />
-                      Get AI Answer
-                    </>
-                  )}
-                </Button>
+                {/* Only show AI button if question is not solved */}
+                {!question.solved && (
+                  <Button
+                    onClick={handleGetAiAnswer}
+                    disabled={isGeneratingAi || !!aiAnswer}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950"
+                  >
+                    {isGeneratingAi ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : aiAnswer ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        AI Answer Generated
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Get AI Answer
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
 
-              {/* AI Generated Answer */}
-              {aiAnswer && (
+              {/* AI Generated Answer - Only show if question is not solved */}
+              {aiAnswer && !question.solved && (
                 <AiAnswerCard
                   answer={aiAnswer.answer}
                   generatedAt={aiAnswer.generatedAt}
@@ -315,9 +318,27 @@ const QuestionDetail = () => {
               )}
 
               {question.answers && question.answers.length > 0 ? (
-                question.answers.map((answer: any) => (
-                  <Card key={answer.id} className="p-4 md:p-6">
-                    <div className="flex gap-3 md:gap-6">
+                (() => {
+                  // Find answer with max upvotes
+                  const maxUpvotes = Math.max(...question.answers.map((a: any) => (a.upvotes || 0) - (a.downvotes || 0)));
+                  
+                  return question.answers.map((answer: any) => {
+                    const score = (answer.upvotes || 0) - (answer.downvotes || 0);
+                    const isTopAnswer = score === maxUpvotes && score > 0 && question.answers.length > 1;
+                    
+                    return (
+                      <Card 
+                        key={answer.id} 
+                        className={`p-4 md:p-6 ${isTopAnswer ? 'border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 shadow-lg' : ''}`}
+                      >
+                        {isTopAnswer && (
+                          <div className="mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                              🏆 Top Answer
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="flex gap-3 md:gap-6">
                       <VoteColumn
                         itemId={answer.id}
                         initialScore={(answer.upvotes || 0) - (answer.downvotes || 0)}
@@ -355,10 +376,11 @@ const QuestionDetail = () => {
                             avatarSize="md"
                           />
                         </div>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })})()
               ) : (
                 <Card className="p-6">
                   <p className="text-center text-muted-foreground">
@@ -368,16 +390,21 @@ const QuestionDetail = () => {
               )}
             </div>
 
-            <Separator />
+            {/* Only show separator and Your Answer section if question is not solved */}
+            {!question.solved && (
+              <>
+                <Separator />
 
-            {/* Your Answer */}
-            <Card className="p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Your Answer</h3>
-              <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4">
-                Share your knowledge and help the community
-              </p>
-              <Button onClick={() => setShowAnswerModal(true)} size="sm">Write Answer</Button>
-            </Card>
+                {/* Your Answer */}
+                <Card className="p-4 md:p-6">
+                  <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Your Answer</h3>
+                  <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4">
+                    Share your knowledge and help the community
+                  </p>
+                  <Button onClick={() => setShowAnswerModal(true)} size="sm">Write Answer</Button>
+                </Card>
+              </>
+            )}
           </div>
         </main>
       </div>
