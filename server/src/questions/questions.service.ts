@@ -1,10 +1,24 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuestionDto, UpdateQuestionDto, QuestionFiltersDto } from './dto/question.dto';
 
 @Injectable()
 export class QuestionsService {
+  private readonly logger = new Logger(QuestionsService.name);
+  private embeddingService: any; // Lazy loaded to avoid circular dependency
+
   constructor(private prisma: PrismaService) { }
+
+  // Lazy load embedding service to avoid circular dependency
+  private async getEmbeddingService() {
+    if (!this.embeddingService) {
+      const { EmbeddingService } = await import('../ai/services/embedding.service');
+      const { ConfigService } = await import('@nestjs/config');
+      const configService = new ConfigService();
+      this.embeddingService = new EmbeddingService(this.prisma, configService);
+    }
+    return this.embeddingService;
+  }
 
   async create(createQuestionDto: CreateQuestionDto, authorId: string) {
     const { tags, ...questionData } = createQuestionDto;
@@ -23,7 +37,7 @@ export class QuestionsService {
       })
     );
 
-    return this.prisma.question.create({
+    const question = await this.prisma.question.create({
       data: {
         ...questionData,
         excerpt: questionData.description.substring(0, 150),
@@ -50,6 +64,26 @@ export class QuestionsService {
         },
       },
     });
+
+    // 🆕 Auto-generate embedding (non-blocking)
+    this.generateEmbeddingAsync(question).catch(err =>
+      this.logger.warn(`Failed to generate embedding for question ${question.id}: ${err.message}`)
+    );
+
+    return question;
+  }
+
+  private async generateEmbeddingAsync(question: any) {
+    try {
+      const embeddingService = await this.getEmbeddingService();
+      const tagNames = question.tags?.map(t => (typeof t === 'string' ? t : t.name)).join(', ') || '';
+      const content = `${question.title}\n\n${question.description}\n\nTags: ${tagNames}`;
+
+      await embeddingService.createEmbedding('question', question.id, content);
+      this.logger.log(`✅ Generated embedding for question: ${question.id}`);
+    } catch (error) {
+      this.logger.error(`❌ Embedding generation failed: ${error.message}`);
+    }
   }
 
   async findAll(filters: QuestionFiltersDto) {

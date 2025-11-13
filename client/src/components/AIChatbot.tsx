@@ -55,7 +55,7 @@ export const AIChatbot = () => {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hi! I'm Overflow Assistant, your AI coding companion powered by Gemini. 🤖\n\nI can help you:\n\n1. **Explain** coding concepts and errors\n2. **Debug** issues with detailed solutions\n3. **Provide** code examples and best practices\n4. **Guide** you step-by-step through problems\n\nTry asking:\n- \"How to fix undefined error in React?\"\n- \"Explain async/await in JavaScript\"\n- \"Best practices for API authentication\"\n- \"How to implement JWT authentication?\""
+      content: "👋 Hi! I'm your **coding assistant** - I only help with programming questions.\n\n**What I can do:**\n• Answer coding questions from our Q&A database\n• Suggest similar questions others have asked\n• Explain errors and provide solutions\n• Share code examples and best practices\n\n**What I can't do:**\n• General chat or greetings\n• Non-coding topics\n• Personal advice\n\n**Try asking:**\n• \"How to fix undefined error in React?\"\n• \"Authentication issues in Node.js\"\n• \"Best way to handle async operations?\"\n\n💡 **Tip:** I'll search our database first and show you similar questions before answering!"
     }
   ]);
   const [input, setInput] = useState("");
@@ -111,10 +111,10 @@ export const AIChatbot = () => {
     setIsTyping(true);
 
     try {
-      // Call GPT API directly
+      // Call Gemini API with RAG
       const aiResponse = await aiService.chat(userQuery);
 
-      // Create message with typing animation
+      // Create message with typing animation and similar questions
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -122,6 +122,12 @@ export const AIChatbot = () => {
         fullContent: aiResponse.answer, // Store full content
         isAiGenerated: true,
         isTyping: true, // Enable typing animation
+        suggestions: aiResponse.similarQuestions?.map(sq => ({
+          id: sq.id,
+          title: sq.title,
+          tags: sq.tags,
+          similarity: sq.similarity,
+        })),
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -198,7 +204,7 @@ export const AIChatbot = () => {
               <div className="mt-3 space-y-2">
                 {message.suggestions.map((suggestion) => (
                   <Link key={suggestion.id} to={`/questions/${suggestion.id}`} onClick={() => setIsOpen(false)}>
-                    <div className="p-3 rounded-lg bg-card hover:bg-purple-50 transition-colors border border-border hover:border-purple-300">
+                    <div className="p-3 rounded-lg bg-card transition-colors border border-border hover:border-purple-300 ">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h4 className="text-sm font-medium flex-1">{suggestion.title}</h4>
                         {suggestion.similarity && (

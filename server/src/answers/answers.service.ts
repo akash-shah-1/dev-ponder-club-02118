@@ -1,10 +1,24 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnswerDto, UpdateAnswerDto } from './dto/answer.dto';
 
 @Injectable()
 export class AnswersService {
+  private readonly logger = new Logger(AnswersService.name);
+  private embeddingService: any; // Lazy loaded
+
   constructor(private prisma: PrismaService) {}
+
+  // Lazy load embedding service
+  private async getEmbeddingService() {
+    if (!this.embeddingService) {
+      const { EmbeddingService } = await import('../ai/services/embedding.service');
+      const { ConfigService } = await import('@nestjs/config');
+      const configService = new ConfigService();
+      this.embeddingService = new EmbeddingService(this.prisma, configService);
+    }
+    return this.embeddingService;
+  }
 
   async create(createAnswerDto: CreateAnswerDto, authorId: string) {
     const question = await this.prisma.question.findUnique({
@@ -188,7 +202,22 @@ export class AnswersService {
       data: { solved: true },
     });
 
+    // 🆕 Auto-generate embedding for accepted answer (non-blocking)
+    this.generateEmbeddingAsync(acceptedAnswer).catch(err =>
+      this.logger.warn(`Failed to generate embedding for answer ${acceptedAnswer.id}: ${err.message}`)
+    );
+
     return acceptedAnswer;
+  }
+
+  private async generateEmbeddingAsync(answer: any) {
+    try {
+      const embeddingService = await this.getEmbeddingService();
+      await embeddingService.createEmbedding('answer', answer.id, answer.content);
+      this.logger.log(`✅ Generated embedding for accepted answer: ${answer.id}`);
+    } catch (error) {
+      this.logger.error(`❌ Embedding generation failed: ${error.message}`);
+    }
   }
 
   async getByUser(userId: string) {

@@ -278,7 +278,7 @@ model AiEmbedding {
   contentType String
   contentId   String
   content     String
-  embedding   Unsupported("vector(1536)")?
+  embedding   Unsupported("vector(768)")?  // Gemini text-embedding-004 uses 768 dimensions
   metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

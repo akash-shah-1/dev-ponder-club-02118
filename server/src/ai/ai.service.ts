@@ -1,15 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { EmbeddingService } from './services/embedding.service';
+import { ContextService } from './services/context.service';
 
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   private genAI: GoogleGenerativeAI;
   private model: any;
 
-  constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  constructor(
+    private configService: ConfigService,
+    private embeddingService: EmbeddingService,
+    private contextService: ContextService,
+  ) {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-pro' 
+      model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash' 
     });
   }
 
@@ -19,27 +28,54 @@ export class AiService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const prompt = `You are a helpful coding assistant. Provide clear, detailed explanations with code examples when relevant. Format your responses in markdown.
+        // Step 1: Find similar questions using vector search
+        this.logger.log(`Searching for similar questions...`);
+        const similarQuestions = await this.embeddingService.findSimilar(
+          question,
+          'question',
+          5
+        );
 
-User Question: ${question}`;
+        this.logger.log(`Found ${similarQuestions.length} similar questions`);
+        if (similarQuestions.length > 0) {
+          this.logger.log(`Top similarity: ${(similarQuestions[0].similarity * 100).toFixed(1)}%`);
+        }
 
+        // Step 2: Build context from similar Q&As
+        const context = await this.contextService.buildContext(
+          { title: question, description: question, tags: [], category: '' },
+          similarQuestions
+        );
+
+        // Step 3: Build enhanced prompt with context
+        const prompt = this.buildPromptWithContext(question, context);
+
+        // Step 4: Get AI response
         const result = await this.model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
         return {
           answer: text,
-          model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-          tokensUsed: 0, // Gemini doesn't provide token count in free tier
+          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
+          tokensUsed: 0,
+          similarQuestions: similarQuestions.map(q => ({
+            id: q.id,
+            title: q.title,
+            similarity: q.similarity,
+            tags: q.tags?.map(t => (typeof t === 'string' ? t : t.name)) || [],
+            answerCount: q._count?.answers || 0,
+          })),
+          contextUsed: similarQuestions.length > 0,
         };
       } catch (error) {
         lastError = error;
-        console.error(`Gemini API Error (attempt ${attempt}/${maxRetries}):`, error.message);
+        this.logger.error(`Gemini API Error (attempt ${attempt}/${maxRetries}):`, error.message);
         
         // If it's a 503 (overloaded) and we have retries left, wait and try again
         if (error.status === 503 && attempt < maxRetries) {
           const waitTime = attempt * 2000; // 2s, 4s, 6s
-          console.log(`Waiting ${waitTime}ms before retry...`);
+          this.logger.log(`Waiting ${waitTime}ms before retry...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
@@ -50,5 +86,51 @@ User Question: ${question}`;
     }
 
     throw new Error('Failed to get AI response: ' + lastError.message);
+  }
+
+  private buildPromptWithContext(question: string, context: any): string {
+    let prompt = `You are a CODING-ONLY assistant. ONLY answer programming questions.
+
+User Question: ${question}
+
+`;
+
+    if (context.similarQuestions.length > 0) {
+      prompt += `\n📚 Similar Questions in Database:\n`;
+      context.similarQuestions.forEach((q, idx) => {
+        prompt += `${idx + 1}. "${q.title}" (${(q.similarity * 100).toFixed(0)}% match)\n`;
+      });
+      prompt += `\n`;
+    }
+
+    if (context.relevantAnswers.length > 0) {
+      prompt += `✅ Previous Solutions:\n`;
+      context.relevantAnswers.forEach((a, idx) => {
+        prompt += `${idx + 1}. ${a.content.substring(0, 200)}...\n`;
+      });
+      prompt += `\n`;
+    }
+
+    prompt += `---
+
+CRITICAL RULES:
+1. ONLY answer coding/programming questions
+2. If question is NOT about coding (greetings, general chat, personal topics):
+   - Say: "I only assist with coding questions. Please ask about programming, errors, or technical issues."
+   - Do NOT answer non-coding questions
+3. Keep responses under 150 words
+4. Be direct - no fluff
+5. If similar questions exist, mention them: "This is similar to [question title]"
+6. Use bullet points
+7. Include minimal code only if needed
+
+Format for CODING questions:
+- Problem: [1 sentence]
+- Solution: [2-3 bullets]
+- Why: [1 sentence]
+
+Your Response:`;
+
+    return prompt;
   }
 }

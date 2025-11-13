@@ -28,7 +28,7 @@ const transformQuestion = (q: ApiQuestion): Question => ({
   id: q.id,
   title: q.title,
   excerpt: q.excerpt,
-  tags: Array.isArray(q.tags) 
+  tags: Array.isArray(q.tags)
     ? q.tags.map(tag => typeof tag === 'string' ? tag : tag.name)
     : [],
   author: {
@@ -47,7 +47,7 @@ const Questions = () => {
   const [showAskModal, setShowAskModal] = useState(false);
   const isMobile = useIsMobile();
   const { data: apiQuestions, isLoading } = useQuestions();
-  
+
   const questions = apiQuestions?.map(transformQuestion) || [];
 
   // Filter function for questions
@@ -89,14 +89,14 @@ const Questions = () => {
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-bold">All Questions</h1>
                 <p className="text-muted-foreground mt-1">
                   Browse questions from the community
                 </p>
               </div>
-              <Button  className="shrink-0" onClick={() => setShowAskModal(true)}>Ask Question</Button>
+              <Button className="shrink-0" onClick={() => setShowAskModal(true)}>Ask Question</Button>
             </div>
 
             {/* Filters */}
@@ -135,8 +135,8 @@ const Questions = () => {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 pt-8">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={!canGoPrevious}
@@ -154,8 +154,8 @@ const Questions = () => {
                     {page}
                   </Button>
                 ))}
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={!canGoNext}
@@ -167,7 +167,7 @@ const Questions = () => {
           </div>
         </main>
       </div>
-      
+
       <AskQuestionModal open={showAskModal} onOpenChange={setShowAskModal} />
       <MobileNav />
     </div>

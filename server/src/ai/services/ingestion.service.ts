@@ -22,18 +22,31 @@ export class IngestionService {
       },
     });
 
-    const items = questions.map((q) => ({
-      type: 'question',
-      id: q.id,
-      content: `${q.title} ${q.description}`,
-    }));
+    const items = questions.map((q) => {
+      const tagNames = q.tags.map(t => (typeof t === 'string' ? t : t.name)).join(', ');
+      return {
+        type: 'question',
+        id: q.id,
+        content: `${q.title}\n\n${q.description}\n\nTags: ${tagNames}`,
+      };
+    });
 
-    const results = await this.embeddingService.batchCreateEmbeddings(items);
+    const results = await this.embeddingService.batchCreateEmbeddings(items, 10);
     
     const successCount = results.filter((r) => r.success).length;
-    this.logger.log(`Ingested ${successCount}/${questions.length} questions`);
+    const failedCount = results.filter((r) => !r.success).length;
+    
+    this.logger.log(`✅ Ingested ${successCount}/${questions.length} questions`);
+    if (failedCount > 0) {
+      this.logger.warn(`⚠️  Failed: ${failedCount} questions`);
+    }
 
-    return { total: questions.length, success: successCount };
+    return { 
+      total: questions.length, 
+      success: successCount,
+      failed: failedCount,
+      results: results.filter(r => !r.success), // Return failed items for debugging
+    };
   }
 
   async ingestAnswers(limit: number = 100) {
