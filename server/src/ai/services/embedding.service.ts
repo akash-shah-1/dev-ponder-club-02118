@@ -110,12 +110,43 @@ export class EmbeddingService {
   }
 
   /**
+   * Expand query with common synonyms
+   */
+  private expandQuery(query: string): string {
+    const expansions: Record<string, string> = {
+      'auth': 'authentication authorization login signin',
+      'db': 'database sql query postgres mysql',
+      'api': 'api endpoint request response rest graphql',
+      'error': 'error exception bug issue problem',
+      'async': 'async await promise asynchronous',
+      'ui': 'ui interface component frontend',
+    };
+    
+    const words = query.toLowerCase().split(/\s+/);
+    const expanded = words.map(word => {
+      // Check if word starts with any expansion key
+      for (const [key, value] of Object.entries(expansions)) {
+        if (word.includes(key)) {
+          return `${word} ${value}`;
+        }
+      }
+      return word;
+    }).join(' ');
+    
+    return expanded;
+  }
+
+  /**
    * Find similar content using vector similarity search
    */
   async findSimilar(text: string, contentType: string, limit: number = 5) {
     try {
+      // 🆕 Expand query for better results
+      const expandedQuery = this.expandQuery(text);
+      this.logger.log(`Query expanded: "${text}" → "${expandedQuery}"`);
+      
       // Generate embedding for search query
-      const queryEmbedding = await this.generateEmbedding(text);
+      const queryEmbedding = await this.generateEmbedding(expandedQuery);
       const embeddingString = `[${queryEmbedding.join(',')}]`;
 
       // Perform cosine similarity search
