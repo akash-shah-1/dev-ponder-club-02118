@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, Eye, ArrowLeft, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import { MessageSquare, Eye, ArrowLeft, CheckCircle2, Sparkles, Loader2, FileText } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useVoteQuestion, useVoteAnswer } from "@/hooks/useVote";
 import { AnswerModal } from "@/components/AnswerModal";
@@ -18,6 +18,7 @@ import { AuthorInfo } from "@/components/AuthorInfo";
 import { useCurrentUser } from "@/hooks/useUser";
 import { aiService } from "@/api/services/ai.service";
 import { AiAnswerCard } from "@/components/AiAnswerCard";
+import { SummaryModal } from "@/components/SummaryModal";
 import * as party from "party-js";
 
 const QuestionDetail = () => {
@@ -33,6 +34,9 @@ const QuestionDetail = () => {
   const [answerVoteStates, setAnswerVoteStates] = useState<Record<string, 'up' | 'down' | null>>({});
   const [aiAnswer, setAiAnswer] = useState<any>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [summary, setSummary] = useState<any>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   useEffect(() => {
     const fetchQuestion = async () => {
@@ -42,6 +46,12 @@ const QuestionDetail = () => {
       try {
         const fetchedQuestion = await questionsService.getById(id);
         setQuestion(fetchedQuestion);
+        
+        // Check if AI answer already exists
+        const existingAiAnswer = await aiService.getAiAnswer(id);
+        if (existingAiAnswer) {
+          setAiAnswer(existingAiAnswer);
+        }
       } catch (error) {
         console.error('Error fetching question:', error);
         toast({
@@ -119,6 +129,36 @@ const QuestionDetail = () => {
       });
     } finally {
       setIsGeneratingAi(false);
+    }
+  };
+
+  const handleGetSummary = async () => {
+    if (!question || !id) return;
+
+    setIsGeneratingSummary(true);
+    try {
+      const response = await aiService.generateSummary(
+        id,
+        question.title,
+        question.description,
+        question.answers || []
+      );
+      
+      setSummary(response);
+      setShowSummaryModal(true);
+      
+      toast({
+        title: "Summary Generated!",
+        description: "View the AI-generated summary of this discussion.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate summary. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingSummary(false);
     }
   };
 
@@ -274,37 +314,55 @@ const QuestionDetail = () => {
 
             {/* Answers */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-lg md:text-xl font-bold">
                   {question.answers?.length || 0} {question.answers?.length === 1 ? 'Answer' : 'Answers'}
                 </h2>
-                {/* Only show AI button if question is not solved */}
-                {!question.solved && (
+                <div className="flex gap-2">
+                  {/* Get Summary Button */}
                   <Button
-                    onClick={handleGetAiAnswer}
-                    disabled={isGeneratingAi || !!aiAnswer}
+                    onClick={handleGetSummary}
+                    disabled={isGeneratingSummary}
                     variant="outline"
                     size="sm"
-                    className="gap-2 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950"
+                    className="gap-2 border-blue-300 hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-950"
                   >
-                    {isGeneratingAi ? (
+                    {isGeneratingSummary ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
                         Generating...
                       </>
-                    ) : aiAnswer ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        AI Answer Generated
-                      </>
                     ) : (
                       <>
-                        <Sparkles className="h-4 w-4" />
-                        Get AI Answer
+                        <FileText className="h-4 w-4" />
+                        Get Summary
                       </>
                     )}
                   </Button>
-                )}
+                  
+                  {/* Only show AI Answer button if question is not solved and no AI answer exists */}
+                  {!question.solved && !aiAnswer && (
+                    <Button
+                      onClick={handleGetAiAnswer}
+                      disabled={isGeneratingAi}
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950"
+                    >
+                      {isGeneratingAi ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          Get AI Answer
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* AI Generated Answer - Only show if question is not solved */}
@@ -415,6 +473,17 @@ const QuestionDetail = () => {
         questionId={id || ''}
         onAnswerSubmitted={refreshAnswers}
       />
+      
+      {/* Summary Modal */}
+      {summary && (
+        <SummaryModal
+          open={showSummaryModal}
+          onOpenChange={setShowSummaryModal}
+          summary={summary.summary}
+          generatedAt={summary.generatedAt}
+        />
+      )}
+      
       <MobileNav />
     </div>
   );

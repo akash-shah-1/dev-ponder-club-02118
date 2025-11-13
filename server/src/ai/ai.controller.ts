@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import { EmbeddingService } from './services/embedding.service';
@@ -24,6 +24,18 @@ export class AiController {
   @ApiOperation({ summary: 'Generate AI answer for a specific question with examples and diagrams' })
   async answerQuestion(@Body() body: { questionId: string; questionTitle: string; questionDescription: string }) {
     return this.aiService.generateDetailedAnswer(body.questionId, body.questionTitle, body.questionDescription);
+  }
+
+  @Get('answer-question/:questionId')
+  @ApiOperation({ summary: 'Get existing AI answer for a question' })
+  async getAiAnswer(@Param('questionId') questionId: string) {
+    return this.aiService.getAiAnswer(questionId);
+  }
+
+  @Post('generate-summary')
+  @ApiOperation({ summary: 'Generate summary of question and all answers' })
+  async generateSummary(@Body() body: { questionId: string; questionTitle: string; questionDescription: string; answers: any[] }) {
+    return this.aiService.generateSummary(body.questionId, body.questionTitle, body.questionDescription, body.answers);
   }
 
   @Post('ingest/questions')

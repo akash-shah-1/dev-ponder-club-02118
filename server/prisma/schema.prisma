@@ -58,6 +58,7 @@ model Question {
 
   author   User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   answers  Answer[]
+  aiAnswer AiAnswer?
   tags     Tag[]      @relation("QuestionTags")
   saves    Save[]
   comments Comment[]
@@ -84,6 +85,20 @@ model Answer {
   comments Comment[]
 
   @@map("answers")
+}
+
+model AiAnswer {
+  id          String   @id @default(cuid())
+  questionId  String   @unique
+  answer      String
+  model       String
+  images      String[] // Array of base64 image data URLs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_answers")
 }
 
 model Tag {

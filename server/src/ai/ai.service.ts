@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { EmbeddingService } from './services/embedding.service';
 import { ContextService } from './services/context.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AiService {
@@ -14,6 +15,7 @@ export class AiService {
     private configService: ConfigService,
     private embeddingService: EmbeddingService,
     private contextService: ContextService,
+    private prisma: PrismaService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.genAI = new GoogleGenerativeAI(apiKey);
@@ -276,7 +278,7 @@ Provide a thorough, educational response that helps the developer truly understa
 
           this.logger.log(`✅ Successfully generated answer with ${modelName}${images.length > 0 ? ` (${images.length} images)` : ''}`);
 
-          return {
+          const aiAnswerData = {
             answer: text,
             model: modelName,
             questionId,
@@ -284,6 +286,30 @@ Provide a thorough, educational response that helps the developer truly understa
             generatedAt: new Date().toISOString(),
             images: images.length > 0 ? images : undefined,
           };
+
+          // Save AI answer to database
+          try {
+            await this.prisma.aiAnswer.upsert({
+              where: { questionId },
+              create: {
+                questionId,
+                answer: text,
+                model: modelName,
+                images: images.length > 0 ? images : [],
+              },
+              update: {
+                answer: text,
+                model: modelName,
+                images: images.length > 0 ? images : [],
+              },
+            });
+            this.logger.log(`💾 Saved AI answer to database for question ${questionId}`);
+          } catch (dbError) {
+            this.logger.error(`Failed to save AI answer to database:`, dbError.message);
+            // Continue anyway, return the answer even if save fails
+          }
+
+          return aiAnswerData;
         } catch (error) {
           lastError = error;
           this.logger.error(`Failed with ${modelName} (attempt ${attempt}/${maxRetries}):`, error.message);
@@ -313,5 +339,83 @@ Provide a thorough, educational response that helps the developer truly understa
         : 'Failed to generate AI answer. Please try again.';
 
     throw new Error(errorMessage);
+  }
+
+  async getAiAnswer(questionId: string) {
+    try {
+      const aiAnswer = await this.prisma.aiAnswer.findUnique({
+        where: { questionId },
+      });
+
+      if (!aiAnswer) {
+        return null;
+      }
+
+      return {
+        answer: aiAnswer.answer,
+        model: aiAnswer.model,
+        questionId: aiAnswer.questionId,
+        isAiGenerated: true,
+        generatedAt: aiAnswer.createdAt.toISOString(),
+        images: aiAnswer.images.length > 0 ? aiAnswer.images : undefined,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get AI answer:`, error.message);
+      return null;
+    }
+  }
+
+  async generateSummary(questionId: string, questionTitle: string, questionDescription: string, answers: any[]) {
+    try {
+      // Build context with question and all answers
+      let context = `Question: ${questionTitle}\n\nDescription: ${questionDescription}\n\n`;
+      
+      if (answers && answers.length > 0) {
+        context += `Answers (${answers.length}):\n\n`;
+        answers.forEach((answer, index) => {
+          context += `Answer ${index + 1} (${answer.upvotes || 0} upvotes):\n${answer.content}\n\n`;
+        });
+      } else {
+        context += `No answers yet.\n`;
+      }
+
+      const prompt = `You are a technical summarizer. Provide a concise, clear summary of this Q&A thread.
+
+${context}
+
+REQUIREMENTS:
+1. Summarize the MAIN PROBLEM in 1-2 sentences
+2. List KEY SOLUTIONS mentioned (if any)
+3. Highlight BEST PRACTICES or RECOMMENDATIONS
+4. Keep it under 200 words
+5. Use bullet points for clarity
+
+FORMAT:
+## Problem Summary
+[Brief description of the issue]
+
+## Solutions
+- [Solution 1]
+- [Solution 2]
+
+## Key Takeaways
+- [Takeaway 1]
+- [Takeaway 2]
+
+Provide a helpful summary that gives readers a quick understanding of the thread.`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const summary = response.text();
+
+      return {
+        summary,
+        questionId,
+        generatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to generate summary:`, error.message);
+      throw new Error('Failed to generate summary. Please try again.');
+    }
   }
 }

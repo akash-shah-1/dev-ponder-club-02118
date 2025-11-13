@@ -25,6 +25,12 @@ export interface AiAnswerResponse {
   images?: string[]; // Base64 encoded images
 }
 
+export interface AiSummaryResponse {
+  summary: string;
+  questionId: string;
+  generatedAt: string;
+}
+
 export const aiService = {
   // Chat with AI - ask any question and get an answer
   async chat(question: string): Promise<AiChatResponse> {
@@ -37,6 +43,21 @@ export const aiService = {
       questionId,
       questionTitle,
       questionDescription,
+    });
+  },
+
+  // Get existing AI answer for a question
+  async getAiAnswer(questionId: string): Promise<AiAnswerResponse | null> {
+    return apiClient.get<AiAnswerResponse>(`/ai/answer-question/${questionId}`);
+  },
+
+  // Generate summary of question and answers
+  async generateSummary(questionId: string, questionTitle: string, questionDescription: string, answers: any[]): Promise<AiSummaryResponse> {
+    return apiClient.post<AiSummaryResponse>('/ai/generate-summary', {
+      questionId,
+      questionTitle,
+      questionDescription,
+      answers,
     });
   },
 };
