@@ -26,25 +26,9 @@ interface Message {
   }>;
 }
 
-// Generate intelligent AI response based on query
+// Simple fallback message when AI service is unavailable
 const generateIntelligentResponse = (query: string): string => {
-  const lowerQuery = query.toLowerCase();
-
-  // Detect common patterns and provide educational answers
-  if (lowerQuery.includes('undefined') || lowerQuery.includes('cannot read property')) {
-    return `## Understanding "Undefined" Errors\n\n**Root Cause:**\nThis error occurs when you try to access a property or method on a variable that hasn't been initialized or is \`undefined\`.\n\n**Common Scenarios:**\n\n1. **Accessing nested properties:**\n\`\`\`javascript\nconst user = {};\nconsole.log(user.profile.name); // Error: Cannot read property 'name' of undefined\n\`\`\`\n\n2. **Async data not loaded yet:**\n\`\`\`javascript\n// Data from API not ready\nconst userName = user.name; // user is undefined\n\`\`\`\n\n**Solutions:**\n\n1. **Optional Chaining (Recommended):**\n\`\`\`javascript\nconst userName = user?.profile?.name;\n\`\`\`\n\n2. **Conditional Check:**\n\`\`\`javascript\nconst userName = user && user.profile && user.profile.name;\n\`\`\`\n\n3. **Default Values:**\n\`\`\`javascript\nconst userName = user?.profile?.name || 'Guest';\n\`\`\`\n\n**Why This Works:**\nOptional chaining (\`?.\`) safely accesses nested properties. If any part is \`undefined\`, it returns \`undefined\` instead of throwing an error.\n\n**Next Steps:**\n1. Check where the variable is initialized\n2. Ensure async data is loaded before accessing\n3. Add proper error handling`;
-  }
-
-  if (lowerQuery.includes('auth') || lowerQuery.includes('authentication') || lowerQuery.includes('unauthorized')) {
-    return `## Understanding Authentication Issues\n\n**Root Cause:**\nAuthentication errors typically occur when:\n1. Token is missing or expired\n2. Token isn't being sent with requests\n3. Backend can't verify the token\n\n**Common Issues in React:**\n\n**1. Token Not Being Sent:**\n\`\`\`javascript\n// ❌ Wrong - no token\nfetch('/api/data')\n\n// ✅ Correct - include token\nfetch('/api/data', {\n  headers: {\n    'Authorization': \`Bearer \${token}\`\n  }\n})\n\`\`\`\n\n**2. Token Expired:**\n\`\`\`javascript\n// Check token expiration\nconst isTokenExpired = () => {\n  const token = localStorage.getItem('token');\n  if (!token) return true;\n  \n  const payload = JSON.parse(atob(token.split('.')[1]));\n  return payload.exp * 1000 < Date.now();\n};\n\`\`\`\n\n**3. API Client Not Initialized:**\n\`\`\`javascript\n// Make sure to initialize with auth\nimport { useApiClient } from '@/lib/api-client';\n\nfunction App() {\n  useApiClient(); // This sets up auth for all requests\n  return <YourApp />;\n}\n\`\`\`\n\n**Solution Steps:**\n\n1. **Check if token exists:**\n\`\`\`javascript\nconst token = await getToken();\nif (!token) {\n  // Redirect to login\n}\n\`\`\`\n\n2. **Ensure token is sent:**\n- Use an API client that automatically adds auth headers\n- Or manually add Authorization header to each request\n\n3. **Handle token refresh:**\n- Implement token refresh logic\n- Redirect to login if refresh fails\n\n**For your specific case:**\nThe "Unauthorized" error suggests your API client isn't sending the auth token. Make sure you've initialized \`useApiClient()\` in your App.tsx!`;
-  }
-
-  if (lowerQuery.includes('async') || lowerQuery.includes('await') || lowerQuery.includes('promise')) {
-    return `## Understanding Async/Await\n\n**What It Is:**\nAsync/await is a way to handle asynchronous operations in JavaScript, making async code look and behave more like synchronous code.\n\n**Basic Concept:**\n\n\`\`\`javascript\n// Without async/await (Promise chains)\nfetchData()\n  .then(data => processData(data))\n  .then(result => console.log(result))\n  .catch(error => console.error(error));\n\n// With async/await (cleaner)\nasync function getData() {\n  try {\n    const data = await fetchData();\n    const result = await processData(data);\n    console.log(result);\n  } catch (error) {\n    console.error(error);\n  }\n}\n\`\`\`\n\n**Key Rules:**\n\n1. **\`async\` keyword** - Makes function return a Promise\n2. **\`await\` keyword** - Pauses execution until Promise resolves\n3. **Can only use \`await\` inside \`async\` functions**\n\n**Common Patterns:**\n\n**1. API Calls:**\n\`\`\`javascript\nconst fetchUser = async (id) => {\n  const response = await fetch(\`/api/users/\${id}\`);\n  const user = await response.json();\n  return user;\n};\n\`\`\`\n\n**2. Error Handling:**\n\`\`\`javascript\ntry {\n  const data = await riskyOperation();\n} catch (error) {\n  console.error('Failed:', error);\n}\n\`\`\`\n\n**3. Multiple Parallel Requests:**\n\`\`\`javascript\n// Sequential (slow)\nconst user = await fetchUser();\nconst posts = await fetchPosts();\n\n// Parallel (fast)\nconst [user, posts] = await Promise.all([\n  fetchUser(),\n  fetchPosts()\n]);\n\`\`\`\n\n**Why This Matters:**\n- Makes async code easier to read\n- Better error handling with try/catch\n- Avoids "callback hell"`;
-  }
-
-  // Generic helpful response
-  return `## Let Me Help You Understand\n\n**Your Question:** "${query}"\n\n**General Approach to Debugging:**\n\n1. **Understand the Error:**\n   - Read the error message carefully\n   - Note the file and line number\n   - Identify what operation failed\n\n2. **Check Common Issues:**\n   - Variable initialization\n   - Async timing problems\n   - Missing dependencies\n   - Incorrect data types\n\n3. **Debug Steps:**\n   \`\`\`javascript\n   // Add console logs\n   console.log('Variable value:', yourVariable);\n   console.log('Type:', typeof yourVariable);\n   \`\`\`\n\n4. **Search for Specifics:**\n   - Copy the exact error message\n   - Include technology names (React, Node.js, etc.)\n   - Mention what you've tried\n\n**To Get Better Help:**\n\n1. **Create a detailed question** with:\n   - Exact error message\n   - Code snippet showing the problem\n   - What you expected vs what happened\n   - What you've already tried\n\n2. **Include context:**\n   - Framework/library versions\n   - Environment (browser, Node.js)\n   - Relevant configuration\n\n**Want More Specific Help?**\nTry asking with more details like:\n- "Why am I getting [specific error] in [technology]?"\n- "How to implement [feature] in [framework]?"\n- "What's the best way to [task] in [language]?"\n\nI'm here to help! Feel free to ask more specific questions.`;
+  return `I'm experiencing some technical difficulties right now. Please try again in a moment.\n\nIf the issue persists, you can:\n• Post your question directly to the community\n• Check our existing Q&A for similar topics\n• Try refreshing the page`;
 };
 
 export const AIChatbot = () => {
@@ -135,9 +119,8 @@ export const AIChatbot = () => {
     } catch (error) {
       console.error('Error:', error);
 
-      // Fallback to pattern-based response
-      const fallbackResponse = generateIntelligentResponse(userQuery);
-      const fullFallbackContent = `I couldn't connect to the AI service, but here's what I can tell you:\n\n${fallbackResponse}\n\n**Note:** This is a fallback response. For better answers, please ensure:\n1. Server is running\n2. Gemini API key is configured\n3. Network connection is stable`;
+      // Fallback to simple error message
+      const fullFallbackContent = generateIntelligentResponse(userQuery);
 
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -150,8 +133,8 @@ export const AIChatbot = () => {
       setMessages(prev => [...prev, fallbackMessage]);
 
       toast({
-        title: "Using Fallback Response",
-        description: error instanceof Error ? error.message : "Couldn't connect to AI service",
+        title: "Connection Issue",
+        description: "Unable to reach AI service. Please try again.",
         variant: "destructive",
       });
     } finally {
