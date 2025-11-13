@@ -1,13 +1,20 @@
 import { useState, useEffect } from 'react';
 import { notificationsService } from '@/api/services/notifications.service';
+import { useUser } from '@clerk/clerk-react';
 import type { Notification } from '@/api/types';
 
 export const useNotifications = (userId: string = 'current-user') => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { isSignedIn } = useUser();
 
   const fetchNotifications = async () => {
+    if (!isSignedIn) {
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const data = await notificationsService.getAll(userId);
@@ -53,8 +60,10 @@ export const useNotifications = (userId: string = 'current-user') => {
   };
 
   useEffect(() => {
-    fetchNotifications();
-  }, [userId]);
+    if (isSignedIn) {
+      fetchNotifications();
+    }
+  }, [userId, isSignedIn]);
 
   return {
     notifications,

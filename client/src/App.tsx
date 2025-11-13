@@ -24,6 +24,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { AIChatbot } from "./components/AIChatbot";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthInitializer } from "./components/AuthInitializer";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +42,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
+            <AuthInitializer>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/questions" element={<Questions />} />
               <Route path="/questions/:id" element={<QuestionDetail />} />
@@ -62,6 +64,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <AIChatbot />
+            </AuthInitializer>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

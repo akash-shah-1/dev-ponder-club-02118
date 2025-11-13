@@ -15,7 +15,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   async getCurrentUser(@CurrentUser() user: any) {
-    return this.usersService.findByClerkId(user.sub);
+    return this.usersService.findOrCreateByClerkId(user.sub);
   }
 
   @Get('top')
@@ -38,7 +38,7 @@ export class UsersController {
     @CurrentUser() user: any,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    const currentUser = await this.usersService.findByClerkId(user.sub);
+    const currentUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.usersService.updateUser(currentUser.id, updateUserDto);
   }
 }

@@ -11,7 +11,7 @@ export class AiService {
     private openAiService: OpenAiService,
     private embeddingService: EmbeddingService,
     private contextService: ContextService,
-  ) {}
+  ) { }
 
   async generateAnswer(questionId: string, userId: string) {
     // Check if question exists

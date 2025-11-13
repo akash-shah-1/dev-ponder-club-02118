@@ -18,14 +18,14 @@ export class NotificationsController {
   @Get()
   @ApiOperation({ summary: 'Get user notifications' })
   async findByUser(@CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
+    const dbUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.notificationsService.findByUser(dbUser.id);
   }
 
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notifications count' })
   async getUnreadCount(@CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
+    const dbUser = await this.usersService.findOrCreateByClerkId(user.sub);
     const count = await this.notificationsService.getUnreadCount(dbUser.id);
     return { count };
   }
@@ -33,21 +33,21 @@ export class NotificationsController {
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark notification as read' })
   async markAsRead(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
+    const dbUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.notificationsService.markAsRead(id, dbUser.id);
   }
 
   @Patch('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   async markAllAsRead(@CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
+    const dbUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.notificationsService.markAllAsRead(dbUser.id);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete notification' })
   async delete(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
+    const dbUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.notificationsService.delete(id, dbUser.id);
   }
 }

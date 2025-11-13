@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 class ApiClient {
     private baseURL: string;
     private getToken?: () => Promise<string | null>;
+    private isInitialized = false;
 
     constructor(baseURL: string) {
         this.baseURL = baseURL;
@@ -12,6 +13,11 @@ class ApiClient {
 
     setAuthTokenGetter(getter: () => Promise<string | null>) {
         this.getToken = getter;
+        this.isInitialized = true;
+    }
+
+    isReady() {
+        return this.isInitialized;
     }
 
     private async getHeaders(): Promise<HeadersInit> {
@@ -21,9 +27,12 @@ class ApiClient {
 
         if (this.getToken) {
             const token = await this.getToken();
+            console.log('Token retrieved:', token ? 'Token exists' : 'No token');
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
+        } else {
+            console.warn('API Client not initialized with auth token getter');
         }
 
         return headers;
@@ -104,7 +113,7 @@ export const apiClient = new ApiClient(API_URL);
 export const useApiClient = () => {
     const { getToken } = useAuth();
 
-    if (!apiClient['getToken']) {
+    if (!apiClient.isReady()) {
         apiClient.setAuthTokenGetter(() => getToken());
     }
 

@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ClerkService } from '../auth/clerk.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private clerkService: ClerkService,
+  ) {}
 
   async createUser(createUserDto: CreateUserDto) {
     return this.prisma.user.create({
@@ -87,5 +91,19 @@ export class UsersService {
       email: clerkUser.emailAddresses[0]?.emailAddress,
       avatar: clerkUser.imageUrl,
     });
+  }
+
+  async findOrCreateByClerkId(clerkId: string) {
+    let user = await this.findByClerkId(clerkId);
+    
+    if (!user) {
+      // Fetch user from Clerk and create in database
+      const clerkUser = await this.clerkService.getUser(clerkId);
+      await this.syncUserFromClerk(clerkUser);
+      // Fetch the newly created user with relations
+      user = await this.findByClerkId(clerkId);
+    }
+    
+    return user;
   }
 }

@@ -1,11 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersService, User } from '@/api';
 import { toast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/clerk-react';
 
 export const useCurrentUser = () => {
+  const { isSignedIn } = useUser();
+  
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: usersService.getCurrentUser,
+    enabled: isSignedIn,
   });
 };
 
