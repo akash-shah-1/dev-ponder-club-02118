@@ -49,9 +49,15 @@ export class UsersService {
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    // Convert dateOfBirth string to DateTime if provided
+    const data: any = { ...updateUserDto };
+    if (data.dateOfBirth) {
+      data.dateOfBirth = new Date(data.dateOfBirth);
+    }
+    
     return this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data,
     });
   }
 
