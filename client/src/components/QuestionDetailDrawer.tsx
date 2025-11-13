@@ -94,9 +94,28 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
       const fetchedQuestion = await questionsService.getById(questionId);
       setQuestion(fetchedQuestion);
       
-      const storedAnswers = localStorage.getItem(`answers_${questionId}`);
-      if (storedAnswers) {
-        setAnswers(JSON.parse(storedAnswers));
+      // Use real answers from API if available, otherwise use mock answers
+      if (fetchedQuestion.answers && fetchedQuestion.answers.length > 0) {
+        setAnswers(fetchedQuestion.answers.map((answer: any) => ({
+          id: answer.id,
+          body: answer.content,
+          author: {
+            name: answer.author?.name || 'Unknown',
+            avatar: answer.author?.avatar || '',
+            reputation: answer.author?.reputation || 0,
+          },
+          upvotes: (answer.upvotes || 0) - (answer.downvotes || 0),
+          timestamp: new Date(answer.createdAt).toLocaleDateString(),
+          isAccepted: answer.isAccepted || false,
+        })));
+      } else {
+        // Check localStorage for any stored answers
+        const storedAnswers = localStorage.getItem(`answers_${questionId}`);
+        if (storedAnswers) {
+          setAnswers(JSON.parse(storedAnswers));
+        } else {
+          setAnswers([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching question:', error);
@@ -110,11 +129,26 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
     }
   };
 
-  const refreshAnswers = () => {
+  const refreshAnswers = async () => {
     if (questionId) {
-      const storedAnswers = localStorage.getItem(`answers_${questionId}`);
-      if (storedAnswers) {
-        setAnswers(JSON.parse(storedAnswers));
+      try {
+        const fetchedQuestion = await questionsService.getById(questionId);
+        if (fetchedQuestion.answers && fetchedQuestion.answers.length > 0) {
+          setAnswers(fetchedQuestion.answers.map((answer: any) => ({
+            id: answer.id,
+            body: answer.content,
+            author: {
+              name: answer.author?.name || 'Unknown',
+              avatar: answer.author?.avatar || '',
+              reputation: answer.author?.reputation || 0,
+            },
+            upvotes: (answer.upvotes || 0) - (answer.downvotes || 0),
+            timestamp: new Date(answer.createdAt).toLocaleDateString(),
+            isAccepted: answer.isAccepted || false,
+          })));
+        }
+      } catch (error) {
+        console.error('Error refreshing answers:', error);
       }
     }
   };
@@ -231,9 +265,18 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
             {/* Answers */}
             <div className="space-y-3">
-              <h3 className="text-base font-bold">{answers.length} Answers</h3>
+              <h3 className="text-base font-bold">
+                {answers.length} {answers.length === 1 ? 'Answer' : 'Answers'}
+              </h3>
 
-              {answers.map((answer) => (
+              {answers.length === 0 ? (
+                <Card className="p-4">
+                  <p className="text-center text-muted-foreground text-sm">
+                    No answers yet. Be the first to answer!
+                  </p>
+                </Card>
+              ) : (
+                answers.map((answer) => (
                 <Card key={answer.id} className="p-4">
                   <div className="flex gap-3">
                     {/* Vote column */}
@@ -293,7 +336,8 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                     </div>
                   </div>
                 </Card>
-              ))}
+              ))
+              )}
             </div>
 
             <Separator className="my-4" />

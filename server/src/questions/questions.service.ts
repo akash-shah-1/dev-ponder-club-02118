@@ -112,7 +112,7 @@ export class QuestionsService {
 
     const orderBy = this.getOrderBy(sortBy);
 
-    return this.prisma.question.findMany({
+    const questions = await this.prisma.question.findMany({
       where,
       orderBy,
       include: {
@@ -133,6 +133,13 @@ export class QuestionsService {
         },
       },
     });
+
+    // Transform _count.answers to answerCount for frontend compatibility
+    return questions.map(q => ({
+      ...q,
+      answerCount: q._count.answers,
+      savesCount: q._count.saves,
+    }));
   }
 
   async findOne(id: string) {
@@ -183,7 +190,12 @@ export class QuestionsService {
       data: { views: { increment: 1 } },
     });
 
-    return question;
+    // Transform _count.answers to answerCount for frontend compatibility
+    return {
+      ...question,
+      answerCount: question._count.answers,
+      savesCount: question._count.saves,
+    };
   }
 
   async update(id: string, updateQuestionDto: UpdateQuestionDto, userId: string) {

@@ -22,7 +22,7 @@ const Profile = () => {
   const { data: stats, isLoading: statsLoading } = useUserStats();
   const { data: activity = [], isLoading: activityLoading } = useUserActivity();
   const { data: questions = [] } = useQuestions();
-  
+
   // Filter user's own questions
   const userQuestions = questions.filter(q => q.author.id === user?.id);
 
@@ -71,15 +71,15 @@ const Profile = () => {
                         </span>
                       </span>
                     </div>
-                    
+
                     {/* Social Links */}
                     {(user?.website || user?.githubUrl || user?.twitterUrl || user?.linkedinUrl) && (
                       <div className="flex flex-wrap gap-2 mb-3 md:mb-4 justify-center sm:justify-start">
                         {user?.website && (
-                          <a 
-                            href={user.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={user.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
                           >
                             <LinkIcon className="h-3 w-3 md:h-4 md:w-4" />
@@ -87,10 +87,10 @@ const Profile = () => {
                           </a>
                         )}
                         {user?.githubUrl && (
-                          <a 
-                            href={user.githubUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={user.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
                           >
                             <Github className="h-3 w-3 md:h-4 md:w-4" />
@@ -98,10 +98,10 @@ const Profile = () => {
                           </a>
                         )}
                         {user?.twitterUrl && (
-                          <a 
-                            href={user.twitterUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={user.twitterUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
                           >
                             <Twitter className="h-3 w-3 md:h-4 md:w-4" />
@@ -109,10 +109,10 @@ const Profile = () => {
                           </a>
                         )}
                         {user?.linkedinUrl && (
-                          <a 
-                            href={user.linkedinUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <a
+                            href={user.linkedinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
                           >
                             <Linkedin className="h-3 w-3 md:h-4 md:w-4" />
@@ -281,7 +281,7 @@ const Profile = () => {
         </main>
       </div>
       <MobileNav />
-      
+
       {/* Edit Profile Modal */}
       {user && (
         <EditProfileModal
