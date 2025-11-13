@@ -24,7 +24,6 @@ export class ClerkService {
         secretKey: this.secretKey,
         authorizedParties: ['http://localhost:3002'],
       });
-      console.log('Token verified successfully for user:', payload.sub);
       return payload;
     } catch (error) {
       console.error('Token verification failed:', error);
