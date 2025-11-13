@@ -1,0 +1,216 @@
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateAnswerDto, UpdateAnswerDto } from './dto/answer.dto';
+
+@Injectable()
+export class AnswersService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createAnswerDto: CreateAnswerDto, authorId: string) {
+    const question = await this.prisma.question.findUnique({
+      where: { id: createAnswerDto.questionId },
+    });
+
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+
+    const answer = await this.prisma.answer.create({
+      data: {
+        content: createAnswerDto.content,
+        questionId: createAnswerDto.questionId,
+        authorId,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+      },
+    });
+
+    await this.prisma.user.update({
+      where: { id: authorId },
+      data: { reputation: { increment: 5 } },
+    });
+
+    return answer;
+  }
+
+  async findByQuestion(questionId: string) {
+    return this.prisma.answer.findMany({
+      where: { questionId },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+      },
+      orderBy: [
+        { isAccepted: 'desc' },
+        { upvotes: 'desc' },
+        { createdAt: 'asc' },
+      ],
+    });
+  }
+
+  async findOne(id: string) {
+    const answer = await this.prisma.answer.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+        question: {
+          select: {
+            id: true,
+            title: true,
+            authorId: true,
+          },
+        },
+      },
+    });
+
+    if (!answer) {
+      throw new NotFoundException('Answer not found');
+    }
+
+    return answer;
+  }
+
+  async update(id: string, updateAnswerDto: UpdateAnswerDto, userId: string) {
+    const answer = await this.prisma.answer.findUnique({
+      where: { id },
+      select: { authorId: true },
+    });
+
+    if (!answer) {
+      throw new NotFoundException('Answer not found');
+    }
+
+    if (answer.authorId !== userId) {
+      throw new ForbiddenException('You can only edit your own answers');
+    }
+
+    return this.prisma.answer.update({
+      where: { id },
+      data: updateAnswerDto,
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+      },
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    const answer = await this.prisma.answer.findUnique({
+      where: { id },
+      select: { authorId: true },
+    });
+
+    if (!answer) {
+      throw new NotFoundException('Answer not found');
+    }
+
+    if (answer.authorId !== userId) {
+      throw new ForbiddenException('You can only delete your own answers');
+    }
+
+    return this.prisma.answer.delete({
+      where: { id },
+    });
+  }
+
+  async acceptAnswer(id: string, userId: string) {
+    const answer = await this.prisma.answer.findUnique({
+      where: { id },
+      include: {
+        question: {
+          select: { authorId: true },
+        },
+      },
+    });
+
+    if (!answer) {
+      throw new NotFoundException('Answer not found');
+    }
+
+    if (answer.question.authorId !== userId) {
+      throw new ForbiddenException('Only the question author can accept answers');
+    }
+
+    await this.prisma.answer.updateMany({
+      where: { questionId: answer.questionId },
+      data: { isAccepted: false },
+    });
+
+    const acceptedAnswer = await this.prisma.answer.update({
+      where: { id },
+      data: { isAccepted: true },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+      },
+    });
+
+    await this.prisma.user.update({
+      where: { id: acceptedAnswer.authorId },
+      data: { reputation: { increment: 15 } },
+    });
+
+    await this.prisma.question.update({
+      where: { id: answer.questionId },
+      data: { solved: true },
+    });
+
+    return acceptedAnswer;
+  }
+
+  async getByUser(userId: string) {
+    return this.prisma.answer.findMany({
+      where: { authorId: userId },
+      include: {
+        question: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            reputation: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+}
