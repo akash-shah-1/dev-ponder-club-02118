@@ -173,13 +173,19 @@ export class EmbeddingService {
         });
 
         // Map similarity scores to questions
-        return questions.map(q => {
+        const questionsWithSimilarity = questions.map(q => {
           const match = filtered.find(r => r.contentId === q.id);
           return {
             ...q,
             similarity: match?.similarity || 0,
           };
-        }).sort((a, b) => b.similarity - a.similarity);
+        });
+
+        // 🆕 Re-rank results for better relevance
+        const reRanked = this.reRankResults(questionsWithSimilarity, text);
+        this.logger.log(`After re-ranking: Top score ${reRanked[0]?.similarity.toFixed(3)}`);
+        
+        return reRanked;
       }
 
       return filtered;
@@ -188,6 +194,41 @@ export class EmbeddingService {
       // Fallback to empty results
       return [];
     }
+  }
+
+  /**
+   * Re-rank results by multiple factors for better relevance
+   */
+  private reRankResults(results: any[], query: string): any[] {
+    const queryWords = query.toLowerCase().split(/\s+/);
+    
+    return results.map(r => {
+      let score = r.similarity * 0.6; // Base similarity (60% weight)
+      
+      // Boost if tags match query words
+      const tagNames = r.tags?.map(t => (typeof t === 'string' ? t : t.name).toLowerCase()) || [];
+      const tagMatches = tagNames.filter(tag => 
+        queryWords.some(word => tag.includes(word) || word.includes(tag))
+      ).length;
+      score += tagMatches * 0.15; // +15% per matching tag
+      
+      // Boost if has accepted answers
+      const answerCount = r._count?.answers || 0;
+      if (answerCount > 0) {
+        score += 0.1; // +10% if has answers
+      }
+      if (r.solved) {
+        score += 0.05; // +5% if solved
+      }
+      
+      // Boost recent questions (within 30 days)
+      const daysSinceCreated = (Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceCreated < 30) {
+        score += 0.1; // +10% for recent questions
+      }
+      
+      return { ...r, finalScore: score };
+    }).sort((a, b) => b.finalScore - a.finalScore);
   }
 
   /**
