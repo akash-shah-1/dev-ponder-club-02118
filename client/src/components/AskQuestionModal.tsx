@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCreateQuestion } from "@/hooks/useQuestions";
 import * as party from "party-js";
 
 interface AskQuestionModalProps {
@@ -30,9 +31,10 @@ const categories = [
 export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const createQuestion = useCreateQuestion();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
@@ -49,56 +51,107 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!title.trim() || !body.trim() || tags.length === 0 || !category) {
+
+    // Validation
+    if (!title.trim()) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all fields, select a category, and add at least one tag.",
+        title: "Title required",
+        description: "Please enter a question title.",
         variant: "destructive",
       });
       return;
     }
 
-    const questions = JSON.parse(localStorage.getItem('questions') || '[]');
-    const newQuestion = {
-      id: Date.now().toString(),
-      title,
-      description: body,
-      excerpt: body.substring(0, 150) + '...',
-      tags,
-      category,
-      author: { name: 'You', avatar: '', reputation: 0 },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      views: 0,
-      upvotes: 0,
-      solved: false,
-      answers: [],
-    };
-    
-    localStorage.setItem('questions', JSON.stringify([newQuestion, ...questions]));
+    if (title.trim().length < 10) {
+      toast({
+        title: "Title too short",
+        description: "Title must be at least 10 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    onOpenChange(false);
+    if (title.trim().length > 200) {
+      toast({
+        title: "Title too long",
+        description: "Title must be no more than 200 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Small delay to ensure modal closes before confetti
-    await new Promise(resolve => setTimeout(resolve, 100));
+    if (!body.trim()) {
+      toast({
+        title: "Description required",
+        description: "Please provide question details.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Trigger confetti effect
-    party.confetti(document.body, {
-      count: party.variation.range(60, 100),
-      spread: party.variation.range(40, 70),
-    });
+    if (body.trim().length < 30) {
+      toast({
+        title: "Description too short",
+        description: "Description must be at least 30 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Question posted!",
-      description: "Your question has been submitted successfully.",
-    });
-    
-    setTitle("");
-    setBody("");
-    setCategory("");
-    setTags([]);
-    navigate("/questions");
+    if (!category) {
+      toast({
+        title: "Category required",
+        description: "Please select a category.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tags.length === 0) {
+      toast({
+        title: "Tags required",
+        description: "Please add at least one tag.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (tags.length > 5) {
+      toast({
+        title: "Too many tags",
+        description: "Maximum 5 tags allowed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await createQuestion.mutateAsync({
+        title: title.trim(),
+        description: body.trim(),
+        category: category as any,
+        tags,
+      });
+
+      onOpenChange(false);
+
+      // Small delay to ensure modal closes before confetti
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Trigger confetti effect
+      party.confetti(document.body, {
+        count: party.variation.range(60, 100),
+        spread: party.variation.range(40, 70),
+      });
+
+      setTitle("");
+      setBody("");
+      setCategory("");
+      setTags([]);
+      navigate("/questions");
+    } catch (error) {
+      console.error('Failed to create question:', error);
+    }
   };
 
   const formContent = (
@@ -110,7 +163,11 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
           placeholder="e.g., How to implement JWT authentication in React?"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          maxLength={200}
         />
+        <p className="text-xs text-muted-foreground">
+          {title.length}/200 characters (minimum 10)
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -139,6 +196,9 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
           rows={8}
           className="resize-none"
         />
+        <p className="text-xs text-muted-foreground">
+          {body.length} characters (minimum 30)
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -171,11 +231,16 @@ export const AskQuestionModal = ({ open, onOpenChange }: AskQuestionModalProps) 
             </Badge>
           ))}
         </div>
+        <p className="text-xs text-muted-foreground">
+          {tags.length}/5 tags
+        </p>
       </div>
 
       <div className="flex gap-4 pt-4">
-        <Button type="submit">Post Question</Button>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Button type="submit" disabled={createQuestion.isPending}>
+          {createQuestion.isPending ? "Posting..." : "Post Question"}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createQuestion.isPending}>
           Cancel
         </Button>
       </div>

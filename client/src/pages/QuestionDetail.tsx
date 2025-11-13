@@ -10,92 +10,34 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Eye, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useVoting } from "@/hooks/useVoting";
+import { useVoteQuestion, useVoteAnswer } from "@/hooks/useVote";
 import { AnswerModal } from "@/components/AnswerModal";
 import { questionsService, Question } from "@/api";
-import { CURRENT_USER_ID } from "@/api/mock/questions.mock";
 import { VoteColumn } from "@/components/VoteColumn";
 import { AuthorInfo } from "@/components/AuthorInfo";
+import { useCurrentUser } from "@/hooks/useUser";
 import * as party from "party-js";
-
-const mockAnswers = [
-  {
-    id: "1",
-    body: `The best approach is to use an interceptor to handle token refresh automatically. Here's a robust solution:
-
-\`\`\`javascript
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: '/api'
-});
-
-api.interceptors.response.use(
-  response => response,
-  async error => {
-    const originalRequest = error.config;
-    
-    if (error.response.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refreshToken');
-      const { data } = await axios.post('/api/refresh', { refreshToken });
-      localStorage.setItem('token', data.token);
-      return api(originalRequest);
-    }
-    return Promise.reject(error);
-  }
-);
-\`\`\`
-
-This automatically retries failed requests after refreshing the token.`,
-    author: {
-      name: "Alex Kumar",
-      avatar: "",
-      reputation: 4850,
-    },
-    upvotes: 8,
-    timestamp: "1 hour ago",
-    isAccepted: false,
-  },
-  {
-    id: "2",
-    body: `I'd also recommend using \`react-query\` or \`swr\` for handling authentication state. They provide built-in retry logic and cache management.
-
-Additionally, store tokens in httpOnly cookies instead of localStorage for better security against XSS attacks.`,
-    author: {
-      name: "Emma Rodriguez",
-      avatar: "",
-      reputation: 3120,
-    },
-    upvotes: 5,
-    timestamp: "30 minutes ago",
-    isAccepted: false,
-  },
-];
 
 const QuestionDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
-  const [answers, setAnswers] = useState(mockAnswers);
   const [showAnswerModal, setShowAnswerModal] = useState(false);
-  const questionVoting = useVoting('question');
-  const answerVoting = useVoting('answer');
+  const questionVote = useVoteQuestion();
+  const answerVote = useVoteAnswer();
+  const [questionVoteState, setQuestionVoteState] = useState<'up' | 'down' | null>(null);
+  const [answerVoteStates, setAnswerVoteStates] = useState<Record<string, 'up' | 'down' | null>>({});
 
   useEffect(() => {
     const fetchQuestion = async () => {
       if (!id) return;
-      
+
       setLoading(true);
       try {
         const fetchedQuestion = await questionsService.getById(id);
         setQuestion(fetchedQuestion);
-        
-        const storedAnswers = localStorage.getItem(`answers_${id}`);
-        if (storedAnswers) {
-          setAnswers(JSON.parse(storedAnswers));
-        }
       } catch (error) {
         console.error('Error fetching question:', error);
         toast({
@@ -111,28 +53,30 @@ const QuestionDetail = () => {
     fetchQuestion();
   }, [id]);
 
-  const refreshAnswers = () => {
-    if (id) {
-      const storedAnswers = localStorage.getItem(`answers_${id}`);
-      if (storedAnswers) {
-        setAnswers(JSON.parse(storedAnswers));
-      }
+  const refreshAnswers = async () => {
+    if (!id) return;
+
+    try {
+      const fetchedQuestion = await questionsService.getById(id);
+      setQuestion(fetchedQuestion);
+    } catch (error) {
+      console.error('Error refreshing answers:', error);
     }
   };
 
   const handleMarkSolved = async () => {
     if (!id || !question) return;
-    
+
     try {
       await questionsService.markAsSolved(id);
       setQuestion({ ...question, solved: true });
-      
+
       // Trigger confetti celebration
       party.confetti(document.body, {
         count: party.variation.range(80, 120),
         spread: party.variation.range(50, 80),
       });
-      
+
       toast({
         title: "Question resolved!",
         description: "Great job solving this question!",
@@ -208,9 +152,9 @@ const QuestionDetail = () => {
         <main className="flex-1 p-4 md:p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             {/* Back Button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigate(-1)}
               className="gap-2"
             >
@@ -223,17 +167,23 @@ const QuestionDetail = () => {
               <div className="flex gap-3 md:gap-6">
                 <VoteColumn
                   itemId={question.id}
-                  initialScore={questionVoting.getScore(question.id, question.upvotes)}
-                  currentVote={questionVoting.getVote(question.id)}
-                  onUpvote={() => questionVoting.vote(question.id, 'up')}
-                  onDownvote={() => questionVoting.vote(question.id, 'down')}
+                  initialScore={question.upvotes - question.downvotes}
+                  currentVote={questionVoteState}
+                  onUpvote={() => {
+                    questionVote.upvote.mutate(question.id);
+                    setQuestionVoteState(questionVoteState === 'up' ? null : 'up');
+                  }}
+                  onDownvote={() => {
+                    questionVote.downvote.mutate(question.id);
+                    setQuestionVoteState(questionVoteState === 'down' ? null : 'down');
+                  }}
                 />
 
                 <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <h1 className="text-lg md:text-2xl font-bold break-words flex-1">{question.title}</h1>
-                    {!question.solved && question.authorId === CURRENT_USER_ID && (
-                      <Button 
+                    {!question.solved && currentUser && question.authorId === currentUser.id && (
+                      <Button
                         onClick={handleMarkSolved}
                         variant="outline"
                         size="sm"
@@ -250,7 +200,7 @@ const QuestionDetail = () => {
                       </Badge>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Eye className="h-3 w-3 md:h-4 md:w-4" />
@@ -268,11 +218,14 @@ const QuestionDetail = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 md:gap-2">
-                    {question.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {question.tags.map((tag) => {
+                      const tagName = typeof tag === 'string' ? tag : tag.name;
+                      return (
+                        <Badge key={tagName} variant="secondary" className="text-xs">
+                          {tagName}
+                        </Badge>
+                      );
+                    })}
                   </div>
 
                   <div className="pt-3 md:pt-4">
@@ -289,38 +242,62 @@ const QuestionDetail = () => {
 
             {/* Answers */}
             <div className="space-y-4">
-              <h2 className="text-lg md:text-xl font-bold">{answers.length} Answers</h2>
+              <h2 className="text-lg md:text-xl font-bold">
+                {question.answers?.length || 0} {question.answers?.length === 1 ? 'Answer' : 'Answers'}
+              </h2>
 
-              {answers.map((answer) => (
-                <Card key={answer.id} className="p-4 md:p-6">
-                  <div className="flex gap-3 md:gap-6">
-                    <VoteColumn
-                      itemId={answer.id}
-                      initialScore={answerVoting.getScore(answer.id, answer.upvotes)}
-                      currentVote={answerVoting.getVote(answer.id)}
-                      onUpvote={() => answerVoting.vote(answer.id, 'up')}
-                      onDownvote={() => answerVoting.vote(answer.id, 'down')}
-                      isAccepted={answer.isAccepted}
-                    />
+              {question.answers && question.answers.length > 0 ? (
+                question.answers.map((answer: any) => (
+                  <Card key={answer.id} className="p-4 md:p-6">
+                    <div className="flex gap-3 md:gap-6">
+                      <VoteColumn
+                        itemId={answer.id}
+                        initialScore={(answer.upvotes || 0) - (answer.downvotes || 0)}
+                        currentVote={answerVoteStates[answer.id] || null}
+                        onUpvote={() => {
+                          answerVote.upvote.mutate(answer.id);
+                          setAnswerVoteStates(prev => ({
+                            ...prev,
+                            [answer.id]: prev[answer.id] === 'up' ? null : 'up'
+                          }));
+                        }}
+                        onDownvote={() => {
+                          answerVote.downvote.mutate(answer.id);
+                          setAnswerVoteStates(prev => ({
+                            ...prev,
+                            [answer.id]: prev[answer.id] === 'down' ? null : 'down'
+                          }));
+                        }}
+                        isAccepted={answer.isAccepted || false}
+                      />
 
-                    <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
-                      <div className="prose max-w-none">
-                        <pre className="whitespace-pre-wrap font-sans text-xs md:text-sm overflow-x-auto">{answer.body}</pre>
-                      </div>
+                      <div className="flex-1 space-y-3 md:space-y-4 min-w-0">
+                        <div className="prose max-w-none">
+                          <pre className="whitespace-pre-wrap font-sans text-xs md:text-sm overflow-x-auto">{answer.content}</pre>
+                        </div>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 md:pt-4 border-t gap-2">
-                        <span className="text-xs md:text-sm text-muted-foreground">{answer.timestamp}</span>
-                        <AuthorInfo
-                          name={answer.author.name}
-                          avatar={answer.author.avatar}
-                          reputation={answer.author.reputation}
-                          avatarSize="md"
-                        />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 md:pt-4 border-t gap-2">
+                          <span className="text-xs md:text-sm text-muted-foreground">
+                            {new Date(answer.createdAt).toLocaleDateString()}
+                          </span>
+                          <AuthorInfo
+                            name={answer.author?.name || 'Unknown'}
+                            avatar={answer.author?.avatar}
+                            reputation={answer.author?.reputation || 0}
+                            avatarSize="md"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Card>
+                ))
+              ) : (
+                <Card className="p-6">
+                  <p className="text-center text-muted-foreground">
+                    No answers yet. Be the first to answer!
+                  </p>
                 </Card>
-              ))}
+              )}
             </div>
 
             <Separator />
@@ -336,8 +313,8 @@ const QuestionDetail = () => {
           </div>
         </main>
       </div>
-      
-      <AnswerModal 
+
+      <AnswerModal
         open={showAnswerModal}
         onOpenChange={setShowAnswerModal}
         questionId={id || ''}

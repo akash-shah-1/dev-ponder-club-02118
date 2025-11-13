@@ -126,11 +126,14 @@ const Home = () => {
                       {questionOfDay.title}
                     </h3>
                     <div className="flex gap-1.5 md:gap-2 mb-4 flex-wrap">
-                      {questionOfDay.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="bg-background/80 backdrop-blur-sm text-foreground border-border text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                      {questionOfDay.tags.slice(0, 3).map((tag) => {
+                        const tagName = typeof tag === 'string' ? tag : tag.name;
+                        return (
+                          <Badge key={tagName} variant="secondary" className="bg-background/80 backdrop-blur-sm text-foreground border-border text-xs">
+                            {tagName}
+                          </Badge>
+                        );
+                      })}
                     </div>
                     <Button 
                       size="sm" 
@@ -197,11 +200,14 @@ const Home = () => {
                             </h3>
                           </button>
                           <div className="flex flex-wrap gap-1.5 md:gap-2 mb-2 md:mb-3">
-                            {question.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="bg-secondary/10 text-secondary hover:bg-secondary/20 text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
+                            {question.tags.map((tag) => {
+                              const tagName = typeof tag === 'string' ? tag : tag.name;
+                              return (
+                                <Badge key={tagName} variant="secondary" className="bg-secondary/10 text-secondary hover:bg-secondary/20 text-xs">
+                                  {tagName}
+                                </Badge>
+                              );
+                            })}
                           </div>
                           <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
                             <span className="font-medium text-foreground">{question.author.name}</span>

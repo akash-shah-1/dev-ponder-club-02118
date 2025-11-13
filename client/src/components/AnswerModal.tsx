@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCreateAnswer } from "@/hooks/useAnswers";
 
 interface AnswerModalProps {
   open: boolean;
@@ -16,13 +17,14 @@ interface AnswerModalProps {
 
 export const AnswerModal = ({ open, onOpenChange, questionId, onAnswerSubmitted }: AnswerModalProps) => {
   const isMobile = useIsMobile();
+  const createAnswer = useCreateAnswer();
   const [answerText, setAnswerText] = useState("");
 
   const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setAnswerText(e.target.value);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!answerText.trim()) {
@@ -34,27 +36,27 @@ export const AnswerModal = ({ open, onOpenChange, questionId, onAnswerSubmitted 
       return;
     }
 
-    const answers = JSON.parse(localStorage.getItem(`answers_${questionId}`) || '[]');
-    const newAnswer = {
-      id: Date.now().toString(),
-      questionId,
-      body: answerText,
-      author: { name: 'You', avatar: '', reputation: 0 },
-      upvotes: 0,
-      timestamp: 'Just now',
-      isAccepted: false,
-    };
-    
-    localStorage.setItem(`answers_${questionId}`, JSON.stringify([...answers, newAnswer]));
+    if (answerText.trim().length < 30) {
+      toast({
+        title: "Answer too short",
+        description: "Answer must be at least 30 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Answer posted!",
-      description: "Your answer has been submitted.",
-    });
-    
-    setAnswerText("");
-    onOpenChange(false);
-    onAnswerSubmitted();
+    try {
+      await createAnswer.mutateAsync({
+        content: answerText.trim(),
+        questionId,
+      });
+      
+      setAnswerText("");
+      onOpenChange(false);
+      onAnswerSubmitted();
+    } catch (error) {
+      console.error('Failed to post answer:', error);
+    }
   };
 
   const formContent = (
@@ -69,11 +71,16 @@ export const AnswerModal = ({ open, onOpenChange, questionId, onAnswerSubmitted 
           rows={12}
           className="resize-none font-mono text-sm"
         />
+        <p className="text-xs text-muted-foreground">
+          {answerText.length} characters (minimum 30)
+        </p>
       </div>
 
       <div className="flex gap-4">
-        <Button type="submit">Post Answer</Button>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Button type="submit" disabled={createAnswer.isPending}>
+          {createAnswer.isPending ? "Posting..." : "Post Answer"}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createAnswer.isPending}>
           Cancel
         </Button>
       </div>

@@ -14,7 +14,7 @@ export interface Question {
   title: string;                 // Index for search
   description: string;           // Full text search index
   excerpt: string;               // First 150 chars
-  tags: string[];                // Array of tag names
+  tags: Array<string | { id: string; name: string; description?: string; color?: string; usageCount?: number }>;  // Array of tag names or tag objects
   category: QuestionCategory;    // Index
   authorId: string;              // Foreign key -> users.id, Index
   author: any;
@@ -47,7 +47,6 @@ export interface CreateQuestionData {
   description: string;           // Min 30 chars
   tags: string[];                // Min 1, Max 5 tags
   category: QuestionCategory;
-  authorId: string;
 }
 
 export interface UpdateQuestionData {

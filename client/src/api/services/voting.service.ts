@@ -2,35 +2,35 @@ import { Vote, VoteSummary, CreateVoteData } from '../types';
 import { apiClient } from '@/lib/api-client';
 
 export const votingService = {
-  async upvoteQuestion(questionId: string, userId: string): Promise<void> {
+  async upvoteQuestion(questionId: string): Promise<void> {
     return apiClient.post<void>('/votes', {
       targetId: questionId,
-      targetType: 'question',
-      voteType: 'upvote'
+      targetType: 'QUESTION',
+      type: 'UPVOTE'
     });
   },
 
-  async downvoteQuestion(questionId: string, userId: string): Promise<void> {
+  async downvoteQuestion(questionId: string): Promise<void> {
     return apiClient.post<void>('/votes', {
       targetId: questionId,
-      targetType: 'question',
-      voteType: 'downvote'
+      targetType: 'QUESTION',
+      type: 'DOWNVOTE'
     });
   },
 
-  async upvoteAnswer(answerId: string, userId: string): Promise<void> {
+  async upvoteAnswer(answerId: string): Promise<void> {
     return apiClient.post<void>('/votes', {
       targetId: answerId,
-      targetType: 'answer',
-      voteType: 'upvote'
+      targetType: 'ANSWER',
+      type: 'UPVOTE'
     });
   },
 
-  async downvoteAnswer(answerId: string, userId: string): Promise<void> {
+  async downvoteAnswer(answerId: string): Promise<void> {
     return apiClient.post<void>('/votes', {
       targetId: answerId,
-      targetType: 'answer',
-      voteType: 'downvote'
+      targetType: 'ANSWER',
+      type: 'DOWNVOTE'
     });
   },
 

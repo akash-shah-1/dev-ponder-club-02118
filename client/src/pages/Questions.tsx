@@ -9,6 +9,8 @@ import { Filter } from "lucide-react";
 import { AskQuestionModal } from "@/components/AskQuestionModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFilterPagination, FilterType } from "@/hooks/useFilterPagination";
+import { useQuestions } from "@/hooks/useQuestions";
+import { Question as ApiQuestion } from "@/api/types";
 
 interface Question {
   id: string;
@@ -21,76 +23,32 @@ interface Question {
   activity?: string;
 }
 
-const mockQuestions: Question[] = [
-  {
-    id: "1",
-    title: "How to implement JWT authentication in React with proper token refresh?",
-    excerpt: "I'm building a React app and need to implement JWT authentication with automatic token refresh. What's the best approach to handle expired tokens?",
-    tags: ["react", "authentication", "jwt", "security"],
-    author: {
-      name: "Sarah Chen",
-      reputation: 2450,
-    },
-    stats: {
-      views: 234,
-      answers: 5,
-      solved: true,
-    },
-    timestamp: "2 hours ago",
+// Helper function to transform API question to display format
+const transformQuestion = (q: ApiQuestion): Question => ({
+  id: q.id,
+  title: q.title,
+  excerpt: q.excerpt,
+  tags: Array.isArray(q.tags) 
+    ? q.tags.map(tag => typeof tag === 'string' ? tag : tag.name)
+    : [],
+  author: {
+    name: q.author?.name || 'Unknown',
+    reputation: q.author?.reputation || 0,
   },
-  {
-    id: "2",
-    title: "TypeScript generic constraints not working as expected with React components",
-    excerpt: "I'm trying to create a reusable React component with TypeScript generics but the constraints aren't being enforced properly...",
-    tags: ["typescript", "react", "generics"],
-    author: {
-      name: "Alex Kumar",
-      reputation: 1823,
-    },
-    stats: {
-      views: 145,
-      answers: 3,
-      solved: false,
-    },
-    timestamp: "5 hours ago",
+  stats: {
+    views: q.views,
+    answers: q.answerCount || 0,
+    solved: q.solved,
   },
-  {
-    id: "3",
-    title: "Best practices for handling async operations in Node.js with error handling",
-    excerpt: "What are the recommended patterns for managing multiple async operations in Node.js while ensuring proper error handling and avoiding callback hell?",
-    tags: ["node.js", "async", "error-handling", "javascript"],
-    author: {
-      name: "Marcus Johnson",
-      reputation: 3120,
-    },
-    stats: {
-      views: 389,
-      answers: 8,
-      solved: true,
-    },
-    timestamp: "1 day ago",
-  },
-  {
-    id: "4",
-    title: "React useState not updating immediately - understanding closure issues",
-    excerpt: "I'm having trouble with useState where the state doesn't update immediately when I call the setter function. How does closure affect this?",
-    tags: ["react", "hooks", "javascript", "closures"],
-    author: {
-      name: "Emma Rodriguez",
-      reputation: 1654,
-    },
-    stats: {
-      views: 567,
-      answers: 12,
-      solved: true,
-    },
-    timestamp: "2 days ago",
-  },
-];
+  timestamp: new Date(q.createdAt).toLocaleDateString(),
+});
 
 const Questions = () => {
   const [showAskModal, setShowAskModal] = useState(false);
   const isMobile = useIsMobile();
+  const { data: apiQuestions, isLoading } = useQuestions();
+  
+  const questions = apiQuestions?.map(transformQuestion) || [];
 
   // Filter function for questions
   const filterQuestions = (question: Question, filter: FilterType): boolean => {
@@ -118,7 +76,7 @@ const Questions = () => {
     canGoNext,
     canGoPrevious,
   } = useFilterPagination({
-    items: mockQuestions,
+    items: questions,
     itemsPerPage: 5,
     filterFn: filterQuestions,
   });
@@ -159,7 +117,11 @@ const Questions = () => {
 
             {/* Questions List */}
             <div className="space-y-4">
-              {currentItems.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Loading questions...
+                </div>
+              ) : currentItems.length > 0 ? (
                 currentItems.map((question) => (
                   <QuestionCard key={question.id} {...question} />
                 ))

@@ -202,11 +202,14 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    {question.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+                    {question.tags.map((tag) => {
+                      const tagName = typeof tag === 'string' ? tag : tag.name;
+                      return (
+                        <Badge key={tagName} variant="secondary" className="text-xs">
+                          {tagName}
+                        </Badge>
+                      );
+                    })}
                   </div>
 
                   <div className="flex items-center gap-2 pt-3">
