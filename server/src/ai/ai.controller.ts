@@ -29,7 +29,11 @@ export class AiController {
   @Get('answer-question/:questionId')
   @ApiOperation({ summary: 'Get existing AI answer for a question' })
   async getAiAnswer(@Param('questionId') questionId: string) {
-    return this.aiService.getAiAnswer(questionId);
+    const result = await this.aiService.getAiAnswer(questionId);
+    if (!result) {
+      return { exists: false };
+    }
+    return { exists: true, ...result };
   }
 
   @Post('generate-summary')

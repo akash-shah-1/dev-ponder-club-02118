@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { aiService } from "@/api/services/ai.service";
 import { useToast } from "@/hooks/use-toast";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface Message {
   id: string;
@@ -177,7 +178,13 @@ export const AIChatbot = () => {
                     : "bg-slate-100 dark:bg-slate-800"
               )}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              {message.role === "user" ? (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              ) : (
+                <div className="text-sm">
+                  <MarkdownRenderer content={message.content} />
+                </div>
+              )}
               {message.isTyping && (
                 <span className="inline-block w-1 h-4 ml-1 bg-purple-600 animate-pulse" />
               )}

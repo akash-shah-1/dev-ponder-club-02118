@@ -48,7 +48,11 @@ export const aiService = {
 
   // Get existing AI answer for a question
   async getAiAnswer(questionId: string): Promise<AiAnswerResponse | null> {
-    return apiClient.get<AiAnswerResponse>(`/ai/answer-question/${questionId}`);
+    const response: any = await apiClient.get(`/ai/answer-question/${questionId}`);
+    if (!response.exists) {
+      return null;
+    }
+    return response as AiAnswerResponse;
   },
 
   // Generate summary of question and answers

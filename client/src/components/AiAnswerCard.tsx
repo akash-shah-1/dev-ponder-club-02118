@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Bot, ChevronDown, ChevronUp } from "lucide-react";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface AiAnswerCardProps {
   answer: string;
@@ -11,60 +12,7 @@ interface AiAnswerCardProps {
   images?: string[];
 }
 
-// Simple markdown-like renderer for AI answers
-const renderMarkdown = (text: string) => {
-  // Split by code blocks
-  const parts = text.split(/(```[\s\S]*?```)/g);
-  
-  return parts.map((part, index) => {
-    // Code block
-    if (part.startsWith('```')) {
-      const code = part.replace(/```(\w+)?\n?/g, '').replace(/```$/g, '');
-      return (
-        <pre key={index} className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto my-4">
-          <code className="text-sm">{code}</code>
-        </pre>
-      );
-    }
-    
-    // Regular text with markdown formatting
-    return (
-      <div key={index} className="space-y-3">
-        {part.split('\n\n').map((paragraph, pIndex) => {
-          // Headers
-          if (paragraph.startsWith('## ')) {
-            return <h2 key={pIndex} className="text-xl font-bold mt-6 mb-3">{paragraph.replace('## ', '')}</h2>;
-          }
-          if (paragraph.startsWith('### ')) {
-            return <h3 key={pIndex} className="text-lg font-semibold mt-4 mb-2">{paragraph.replace('### ', '')}</h3>;
-          }
-          
-          // Lists
-          if (paragraph.includes('\n- ')) {
-            const items = paragraph.split('\n').filter(line => line.startsWith('- '));
-            return (
-              <ul key={pIndex} className="list-disc list-inside space-y-1 ml-4">
-                {items.map((item, iIndex) => (
-                  <li key={iIndex}>{item.replace('- ', '')}</li>
-                ))}
-              </ul>
-            );
-          }
-          
-          // Inline code
-          const withInlineCode = paragraph.replace(/`([^`]+)`/g, '<code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-sm">$1</code>');
-          
-          // Bold
-          const withBold = withInlineCode.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-          
-          return paragraph.trim() ? (
-            <p key={pIndex} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: withBold }} />
-          ) : null;
-        })}
-      </div>
-    );
-  });
-};
+
 
 export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -117,10 +65,10 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
       )}
 
       <div 
-        className="prose prose-sm md:prose-base max-w-none text-sm md:text-base relative overflow-hidden transition-all duration-300"
+        className="relative overflow-hidden transition-all duration-300"
         style={{ maxHeight: isExpanded ? 'none' : `${maxHeight}px` }}
       >
-        {renderMarkdown(answer)}
+        <MarkdownRenderer content={answer} />
         {!isExpanded && (
           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-purple-50 via-purple-50/80 to-transparent dark:from-purple-950/20 dark:via-purple-950/10" />
         )}

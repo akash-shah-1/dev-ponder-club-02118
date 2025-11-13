@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, FileText } from "lucide-react";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface SummaryModalProps {
   open: boolean;
@@ -8,35 +9,6 @@ interface SummaryModalProps {
   summary: string;
   generatedAt: string;
 }
-
-// Simple markdown renderer for summary
-const renderSummary = (text: string) => {
-  const parts = text.split('\n\n');
-  
-  return parts.map((part, index) => {
-    // Headers
-    if (part.startsWith('## ')) {
-      return <h2 key={index} className="text-lg font-bold mt-4 mb-2">{part.replace('## ', '')}</h2>;
-    }
-    
-    // Lists
-    if (part.includes('\n- ')) {
-      const items = part.split('\n').filter(line => line.startsWith('- '));
-      return (
-        <ul key={index} className="list-disc list-inside space-y-1 ml-4 mb-3">
-          {items.map((item, iIndex) => (
-            <li key={iIndex}>{item.replace('- ', '')}</li>
-          ))}
-        </ul>
-      );
-    }
-    
-    // Regular paragraphs
-    return part.trim() ? (
-      <p key={index} className="leading-relaxed mb-3">{part}</p>
-    ) : null;
-  });
-};
 
 export const SummaryModal = ({ open, onOpenChange, summary, generatedAt }: SummaryModalProps) => {
   return (
@@ -60,9 +32,7 @@ export const SummaryModal = ({ open, onOpenChange, summary, generatedAt }: Summa
           </div>
         </DialogHeader>
 
-        <div className="prose prose-sm max-w-none text-sm">
-          {renderSummary(summary)}
-        </div>
+        <MarkdownRenderer content={summary} />
 
         <div className="mt-4 pt-4 border-t">
           <p className="text-xs text-muted-foreground italic">

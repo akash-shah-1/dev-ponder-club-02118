@@ -369,7 +369,7 @@ Provide a thorough, educational response that helps the developer truly understa
     try {
       // Build context with question and all answers
       let context = `Question: ${questionTitle}\n\nDescription: ${questionDescription}\n\n`;
-      
+
       if (answers && answers.length > 0) {
         context += `Answers (${answers.length}):\n\n`;
         answers.forEach((answer, index) => {
