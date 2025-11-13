@@ -21,13 +21,13 @@ const id = crypto.randomUUID();
 ### 2. ✅ Gemini API Overloaded (503 Error)
 **Problem**: `gemini-2.5-flash` model is unstable and overloaded
 
-**Fix**: Changed to stable `gemini-1.5-flash` model
+**Fix**: Changed to stable `gemini-2.5-flash-lite` model
 ```env
 # Before
 GEMINI_MODEL=gemini-2.5-flash
 
 # After
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 ---
@@ -94,7 +94,7 @@ Look for:
 | Component | Before | After |
 |-----------|--------|-------|
 | UUID Generation | `@paralleldrive/cuid2` | `crypto.randomUUID()` |
-| Gemini Model | `gemini-2.5-flash` | `gemini-1.5-flash` |
+| Gemini Model | `gemini-2.5-flash` | `gemini-2.5-flash-lite` |
 | Similarity Threshold | 0.75 (75%) | 0.65 (65%) |
 | Logging | Minimal | Detailed with scores |
 

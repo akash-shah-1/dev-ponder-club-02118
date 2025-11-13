@@ -9,7 +9,7 @@ This module provides a simple Gemini-powered chatbot API.
 2. Add it to `.env`:
 ```env
 GEMINI_API_KEY=your_api_key_here
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 3. The Gemini package is already installed via `npm install @google/generative-ai`
@@ -31,7 +31,7 @@ Ask any coding question and get an AI-generated answer.
 ```json
 {
   "answer": "Detailed markdown-formatted answer...",
-  "model": "gemini-1.5-flash",
+  "model": "gemini-2.5-flash-lite",
   "tokensUsed": 0
 }
 ```

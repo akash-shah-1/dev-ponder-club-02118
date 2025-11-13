@@ -42,7 +42,7 @@ ON ai_embeddings(content_type, content_id);
 ```env
 # Add to server/.env
 GEMINI_API_KEY=your_existing_key
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash-lite
 GEMINI_EMBEDDING_MODEL=text-embedding-004
 SIMILARITY_THRESHOLD=0.75
 BATCH_SIZE=10
@@ -238,7 +238,7 @@ export class AiService {
   ) {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     this.model = this.genAI.getGenerativeModel({ 
-      model: process.env.GEMINI_MODEL || 'gemini-1.5-flash' 
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite' 
     });
   }
 
@@ -268,7 +268,7 @@ export class AiService {
 
       return {
         answer: text,
-        model: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite',
         tokensUsed: 0,
         similarQuestions: similarQuestions.map(q => ({
           id: q.id,

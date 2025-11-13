@@ -310,6 +310,7 @@ const QuestionDetail = () => {
                   answer={aiAnswer.answer}
                   generatedAt={aiAnswer.generatedAt}
                   model={aiAnswer.model}
+                  images={aiAnswer.images}
                 />
               )}
 

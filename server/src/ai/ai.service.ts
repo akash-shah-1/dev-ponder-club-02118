@@ -18,7 +18,7 @@ export class AiService {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.genAI = new GoogleGenerativeAI(apiKey);
     this.model = this.genAI.getGenerativeModel({
-      model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash'
+      model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash-lite'
     });
   }
 
@@ -57,7 +57,7 @@ export class AiService {
 
         return {
           answer: text,
-          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
+          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash-lite',
           tokensUsed: 0,
           similarQuestions: similarQuestions.map(q => ({
             id: q.id,
@@ -138,19 +138,81 @@ Your Response:`;
     return prompt;
   }
 
+  private detectNeedForDiagram(title: string, description: string): boolean {
+    const text = `${title} ${description}`.toLowerCase();
+    
+    // Keywords that suggest visual diagrams would be helpful
+    const diagramKeywords = [
+      'architecture', 'flow', 'diagram', 'structure', 'design pattern',
+      'lifecycle', 'workflow', 'process', 'state machine', 'component tree',
+      'data flow', 'system design', 'how does', 'how it works',
+      'relationship between', 'hierarchy', 'sequence', 'pipeline',
+      'visualization', 'graph', 'tree structure', 'network',
+    ];
+    
+    return diagramKeywords.some(keyword => text.includes(keyword));
+  }
+
   async generateDetailedAnswer(questionId: string, questionTitle: string, questionDescription: string) {
-    const maxRetries = 3;
+    // Detect if question needs visual diagrams
+    const needsDiagram = this.detectNeedForDiagram(questionTitle, questionDescription);
+    
+    // Try multiple models in order of preference
+    const models = needsDiagram 
+      ? [
+          'gemini-2.0-flash-preview-image-generation', // For diagrams
+          this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
+          'gemini-2.5-flash',
+        ]
+      : [
+          this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash',
+          'gemini-2.5-flash-lite', // Fallback 1: Most stable
+          'gemini-2.0-flash-lite', // Fallback 2: Good availability
+        ];
+    
     let lastError;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Use the same model as chat for consistency
-        const detailedModel = this.genAI.getGenerativeModel({
-          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash'
-        });
+    for (const modelName of models) {
+      const maxRetries = 2; // 2 retries per model
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          this.logger.log(`Attempting to generate answer with ${modelName} (attempt ${attempt}/${maxRetries})${needsDiagram ? ' [Diagram mode]' : ''}`);
+          
+          const detailedModel = this.genAI.getGenerativeModel({
+            model: modelName
+          });
 
-        // Build a detailed prompt for comprehensive answer with examples
-        const prompt = `You are an expert programming tutor. Provide a comprehensive, detailed answer to this coding question.
+          // Build a detailed prompt for comprehensive answer with examples
+          const isImageModel = modelName.includes('image-generation');
+          
+          const prompt = isImageModel 
+            ? `You are an expert programming tutor with the ability to create visual diagrams. Provide a comprehensive answer to this coding question with BOTH text explanation AND visual diagrams.
+
+Question: ${questionTitle}
+
+Description: ${questionDescription}
+
+REQUIREMENTS:
+1. Generate a VISUAL DIAGRAM showing the architecture/flow/structure
+2. Provide DETAILED text explanation
+3. Include PRACTICAL CODE EXAMPLES with comments
+4. Explain WHY the solution works
+5. Include BEST PRACTICES and COMMON PITFALLS
+
+FORMAT YOUR RESPONSE AS:
+
+## Visual Overview
+[Generate a diagram showing the architecture, flow, or structure]
+
+## Understanding the Problem
+[Explain what the issue is and why it occurs]
+
+## Solution
+[Provide the main solution with detailed code example]
+
+\`\`\`javascript`
+            : `You are an expert programming tutor. Provide a comprehensive, detailed answer to this coding question.
 
 Question: ${questionTitle}
 
@@ -194,32 +256,53 @@ FORMAT YOUR RESPONSE AS:
 
 Provide a thorough, educational response that helps the developer truly understand the solution.`;
 
-        const result = await detailedModel.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+          const result = await detailedModel.generateContent(prompt);
+          const response = await result.response;
+          
+          // Extract text and images (if any)
+          const text = response.text();
+          const images: string[] = [];
+          
+          // Check if response has images (for image generation model)
+          if (isImageModel && response.candidates?.[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+              if (part.inlineData?.mimeType?.startsWith('image/')) {
+                // Convert base64 image data to data URL
+                const imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                images.push(imageData);
+              }
+            }
+          }
 
-        return {
-          answer: text,
-          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
-          questionId,
-          isAiGenerated: true,
-          generatedAt: new Date().toISOString(),
-        };
-      } catch (error) {
-        lastError = error;
-        this.logger.error(`Failed to generate detailed answer (attempt ${attempt}/${maxRetries}):`, error.message);
+          this.logger.log(`✅ Successfully generated answer with ${modelName}${images.length > 0 ? ` (${images.length} images)` : ''}`);
+          
+          return {
+            answer: text,
+            model: modelName,
+            questionId,
+            isAiGenerated: true,
+            generatedAt: new Date().toISOString(),
+            images: images.length > 0 ? images : undefined,
+          };
+        } catch (error) {
+          lastError = error;
+          this.logger.error(`Failed with ${modelName} (attempt ${attempt}/${maxRetries}):`, error.message);
 
-        // If it's a quota error (429) or overloaded (503) and we have retries left, wait and try again
-        if ((error.status === 429 || error.status === 503) && attempt < maxRetries) {
-          const waitTime = error.status === 503 ? attempt * 5000 : attempt * 3000; // 5s, 10s, 15s for 503; 3s, 6s, 9s for 429
-          this.logger.log(`${error.status === 503 ? 'Service overloaded' : 'Quota exceeded'}, waiting ${waitTime}ms before retry...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
+          // If it's a quota error (429) or overloaded (503) and we have retries left, wait and try again
+          if ((error.status === 429 || error.status === 503) && attempt < maxRetries) {
+            const waitTime = error.status === 503 ? 3000 : 2000; // 3s for 503, 2s for 429
+            this.logger.log(`Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+
+          // If last attempt with this model, break to try next model
+          break;
         }
-
-        // For other errors or last attempt, break
-        break;
       }
+      
+      // If we get here, all retries for this model failed, try next model
+      this.logger.log(`All retries failed for ${modelName}, trying next model...`);
     }
 
     // If all retries failed, throw error with helpful message

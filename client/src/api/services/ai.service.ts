@@ -22,6 +22,7 @@ export interface AiAnswerResponse {
   questionId: string;
   isAiGenerated: boolean;
   generatedAt: string;
+  images?: string[]; // Base64 encoded images
 }
 
 export const aiService = {
