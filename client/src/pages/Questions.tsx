@@ -41,6 +41,7 @@ const transformQuestion = (q: ApiQuestion): Question => ({
     solved: q.solved,
   },
   timestamp: new Date(q.createdAt).toLocaleDateString(),
+  hasAiAnswer: (q as any).hasAiAnswer || false,
 });
 
 const Questions = () => {

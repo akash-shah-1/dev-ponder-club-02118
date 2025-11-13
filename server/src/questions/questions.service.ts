@@ -125,6 +125,11 @@ export class QuestionsService {
           },
         },
         tags: true,
+        aiAnswer: {
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: {
             answers: true,
@@ -139,6 +144,7 @@ export class QuestionsService {
       ...q,
       answerCount: q._count.answers,
       savesCount: q._count.saves,
+      hasAiAnswer: !!q.aiAnswer,
     }));
   }
 

@@ -370,10 +370,19 @@ Provide a thorough, educational response that helps the developer truly understa
       // Build context with question and all answers
       let context = `Question: ${questionTitle}\n\nDescription: ${questionDescription}\n\n`;
 
+      // Find answer with most upvotes
+      let topAnswer = null;
+      let maxUpvotes = 0;
+      
       if (answers && answers.length > 0) {
         context += `Answers (${answers.length}):\n\n`;
         answers.forEach((answer, index) => {
-          context += `Answer ${index + 1} (${answer.upvotes || 0} upvotes):\n${answer.content}\n\n`;
+          const upvotes = answer.upvotes || 0;
+          if (upvotes > maxUpvotes) {
+            maxUpvotes = upvotes;
+            topAnswer = { index: index + 1, upvotes, content: answer.content };
+          }
+          context += `Answer ${index + 1} (${upvotes} upvotes):\n${answer.content}\n\n`;
         });
       } else {
         context += `No answers yet.\n`;
@@ -383,26 +392,34 @@ Provide a thorough, educational response that helps the developer truly understa
 
 ${context}
 
+${topAnswer && topAnswer.upvotes > 0 ? `\nNOTE: Answer ${topAnswer.index} has the most upvotes (${topAnswer.upvotes}) - this is likely the most helpful solution.\n` : ''}
+
 REQUIREMENTS:
 1. Summarize the MAIN PROBLEM in 1-2 sentences
 2. List KEY SOLUTIONS mentioned (if any)
-3. Highlight BEST PRACTICES or RECOMMENDATIONS
+3. If there's a highly upvoted answer, mention it as the recommended solution
 4. Keep it under 200 words
-5. Use bullet points for clarity
+5. Use proper markdown formatting with line breaks
 
-FORMAT:
+CRITICAL: Use proper markdown formatting with blank lines between sections!
+
+FORMAT (with proper line breaks):
+
 ## Problem Summary
+
 [Brief description of the issue]
 
 ## Solutions
+
 - [Solution 1]
 - [Solution 2]
 
-## Key Takeaways
+${topAnswer && topAnswer.upvotes > 0 ? `## Most Upvoted Solution\n\nAnswer ${topAnswer.index} with ${topAnswer.upvotes} upvotes is the community-recommended solution.\n\n` : ''}## Key Takeaways
+
 - [Takeaway 1]
 - [Takeaway 2]
 
-Provide a helpful summary that gives readers a quick understanding of the thread.`;
+IMPORTANT: Make sure to add blank lines between sections for proper formatting!`;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
