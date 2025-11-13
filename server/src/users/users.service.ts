@@ -106,4 +106,84 @@ export class UsersService {
     
     return user;
   }
+
+  async getUserStats(userId: string) {
+    const [questionCount, answerCount, totalViews, acceptedAnswers] = await Promise.all([
+      // Total questions
+      this.prisma.question.count({
+        where: { authorId: userId },
+      }),
+      // Total answers
+      this.prisma.answer.count({
+        where: { authorId: userId },
+      }),
+      // Total views on user's questions
+      this.prisma.question.aggregate({
+        where: { authorId: userId },
+        _sum: { views: true },
+      }),
+      // Accepted answers count
+      this.prisma.answer.count({
+        where: { 
+          authorId: userId,
+          isAccepted: true,
+        },
+      }),
+    ]);
+
+    return {
+      questions: questionCount,
+      answers: answerCount,
+      reach: totalViews._sum.views || 0,
+      acceptedAnswers,
+    };
+  }
+
+  async getUserActivity(userId: string, limit: number = 10) {
+    const [recentQuestions, recentAnswers] = await Promise.all([
+      this.prisma.question.findMany({
+        where: { authorId: userId },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.answer.findMany({
+        where: { authorId: userId },
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          question: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // Combine and sort by date
+    const activities = [
+      ...recentQuestions.map(q => ({
+        type: 'question' as const,
+        id: q.id,
+        title: q.title,
+        createdAt: q.createdAt,
+      })),
+      ...recentAnswers.map(a => ({
+        type: 'answer' as const,
+        id: a.id,
+        title: a.question.title,
+        questionId: a.question.id,
+        createdAt: a.createdAt,
+      })),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, limit);
+
+    return activities;
+  }
 }

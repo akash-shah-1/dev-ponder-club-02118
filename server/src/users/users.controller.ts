@@ -41,4 +41,34 @@ export class UsersController {
     const currentUser = await this.usersService.findOrCreateByClerkId(user.sub);
     return this.usersService.updateUser(currentUser.id, updateUserDto);
   }
+
+  @Get('me/stats')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user statistics' })
+  async getCurrentUserStats(@CurrentUser() user: any) {
+    const currentUser = await this.usersService.findOrCreateByClerkId(user.sub);
+    return this.usersService.getUserStats(currentUser.id);
+  }
+
+  @Get('me/activity')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user activity' })
+  async getCurrentUserActivity(@CurrentUser() user: any) {
+    const currentUser = await this.usersService.findOrCreateByClerkId(user.sub);
+    return this.usersService.getUserActivity(currentUser.id);
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get user statistics by ID' })
+  async getUserStats(@Param('id') id: string) {
+    return this.usersService.getUserStats(id);
+  }
+
+  @Get(':id/activity')
+  @ApiOperation({ summary: 'Get user activity by ID' })
+  async getUserActivity(@Param('id') id: string) {
+    return this.usersService.getUserActivity(id);
+  }
 }

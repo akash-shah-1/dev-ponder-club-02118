@@ -6,16 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Link as LinkIcon, Calendar, Award, TrendingUp } from "lucide-react";
+import { MapPin, Link as LinkIcon, Calendar, Award, Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useUser";
 import QuestionCard from "@/components/QuestionCard";
 import { useQuestions } from "@/hooks/useQuestions";
 import { getAvatarUrl } from "@/lib/avatar";
+import { useUserStats, useUserActivity } from "@/hooks/useUserStats";
+import { formatDistanceToNow } from "date-fns";
 
 const Profile = () => {
-  const { data: user } = useCurrentUser();
+  const { data: user, isLoading: userLoading } = useCurrentUser();
+  const { data: stats, isLoading: statsLoading } = useUserStats();
+  const { data: activity = [], isLoading: activityLoading } = useUserActivity();
   const { data: questions = [] } = useQuestions();
-  const userQuestions = questions.slice(0, 3);
+  
+  // Filter user's own questions
+  const userQuestions = questions.filter(q => q.author.id === user?.id);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -39,22 +45,32 @@ const Profile = () => {
                       <Button size="sm" className="whitespace-nowrap flex-shrink-0">Edit Profile</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground mb-3 md:mb-4 justify-center sm:justify-start">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="text-xs md:text-sm">San Francisco, CA</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <LinkIcon className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="text-xs md:text-sm">github.com/johndoe</span>
-                      </span>
+                      {user?.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 md:h-4 md:w-4" />
+                          <span className="text-xs md:text-sm">{user.location}</span>
+                        </span>
+                      )}
+                      {user?.website && (
+                        <span className="flex items-center gap-1">
+                          <LinkIcon className="h-3 w-3 md:h-4 md:w-4" />
+                          <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm hover:underline">
+                            {user.website.replace(/^https?:\/\//, '')}
+                          </a>
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 md:h-4 md:w-4" />
-                        <span className="text-xs md:text-sm">Joined 2 years ago</span>
+                        <span className="text-xs md:text-sm">
+                          Member since {new Date().getFullYear()}
+                        </span>
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-3 md:mb-4 text-center sm:text-left">
-                      Full-stack developer passionate about React, TypeScript, and building scalable applications.
-                    </p>
+                    {user?.bio && (
+                      <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-3 md:mb-4 text-center sm:text-left">
+                        {user.bio}
+                      </p>
+                    )}
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 md:gap-2">
                       <Badge variant="secondary" className="gap-1 text-xs">
                         <Award className="h-3 w-3" />
@@ -75,7 +91,11 @@ const Profile = () => {
                   <CardTitle className="text-xs sm:text-sm md:text-lg">Questions</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-3 md:p-6 pt-0">
-                  <p className="text-lg sm:text-2xl md:text-3xl font-bold">24</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <p className="text-lg sm:text-2xl md:text-3xl font-bold">{stats?.questions || 0}</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
@@ -83,7 +103,11 @@ const Profile = () => {
                   <CardTitle className="text-xs sm:text-sm md:text-lg">Answers</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-3 md:p-6 pt-0">
-                  <p className="text-lg sm:text-2xl md:text-3xl font-bold">156</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <p className="text-lg sm:text-2xl md:text-3xl font-bold">{stats?.answers || 0}</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
@@ -91,7 +115,13 @@ const Profile = () => {
                   <CardTitle className="text-xs sm:text-sm md:text-lg">Reach</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 sm:p-3 md:p-6 pt-0">
-                  <p className="text-lg sm:text-2xl md:text-3xl font-bold">12.5k</p>
+                  {statsLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <p className="text-lg sm:text-2xl md:text-3xl font-bold">
+                      {stats?.reach ? (stats.reach >= 1000 ? `${(stats.reach / 1000).toFixed(1)}k` : stats.reach) : 0}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -111,44 +141,58 @@ const Profile = () => {
                     <CardTitle className="text-base md:text-lg">Recent Activity</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 md:p-6 pt-0">
-                    <div className="space-y-3 md:space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-xs md:text-sm">
-                        <Badge variant="outline" className="text-xs">Answer</Badge>
-                        <span className="flex-1">Answered "How to optimize React performance?"</span>
-                        <span className="text-muted-foreground text-xs">2 hours ago</span>
+                    {activityLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin" />
                       </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-xs md:text-sm">
-                        <Badge variant="outline" className="text-xs">Question</Badge>
-                        <span className="flex-1">Asked "Best practices for TypeScript generics"</span>
-                        <span className="text-muted-foreground text-xs">1 day ago</span>
+                    ) : activity.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-8">No activity yet</p>
+                    ) : (
+                      <div className="space-y-3 md:space-y-4">
+                        {activity.map((item) => (
+                          <div key={`${item.type}-${item.id}`} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-xs md:text-sm">
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {item.type}
+                            </Badge>
+                            <span className="flex-1">
+                              {item.type === 'question' ? 'Asked' : 'Answered'} "{item.title.length > 50 ? item.title.substring(0, 50) + '...' : item.title}"
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 text-xs md:text-sm">
-                        <Badge variant="outline" className="text-xs">Badge</Badge>
-                        <span className="flex-1">Earned "Great Answer" badge</span>
-                        <span className="text-muted-foreground text-xs">3 days ago</span>
-                      </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
 
               <TabsContent value="questions" className="mt-4 md:mt-6 space-y-4">
-                {userQuestions.map((question) => (
-                  <QuestionCard
-                    key={question.id}
-                    id={question.id}
-                    title={question.title}
-                    excerpt={question.excerpt}
-                    tags={question.tags}
-                    author={question.author}
-                    stats={{
-                      views: question.views,
-                      answers: question.answerCount || 0,
-                      solved: false,
-                    }}
-                    timestamp={new Date(question.createdAt).toLocaleDateString()}
-                  />
-                ))}
+                {userLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : userQuestions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No questions yet</p>
+                ) : (
+                  userQuestions.map((question) => (
+                    <QuestionCard
+                      key={question.id}
+                      id={question.id}
+                      title={question.title}
+                      excerpt={question.excerpt}
+                      tags={question.tags.map(tag => typeof tag === 'string' ? tag : tag.name)}
+                      author={question.author}
+                      stats={{
+                        views: question.views,
+                        answers: question.answerCount || 0,
+                        solved: false,
+                      }}
+                      timestamp={new Date(question.createdAt).toLocaleDateString()}
+                    />
+                  ))
+                )}
               </TabsContent>
 
               <TabsContent value="answers" className="mt-4 md:mt-6">
