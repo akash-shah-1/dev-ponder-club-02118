@@ -65,4 +65,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsUrl()
   linkedinUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  dateOfBirth?: string;
 }

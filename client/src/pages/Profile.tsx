@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
@@ -6,15 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Link as LinkIcon, Calendar, Award, Loader2 } from "lucide-react";
+import { MapPin, Link as LinkIcon, Calendar, Award, Loader2, Github, Twitter, Linkedin, Cake } from "lucide-react";
 import { useCurrentUser } from "@/hooks/useUser";
 import QuestionCard from "@/components/QuestionCard";
 import { useQuestions } from "@/hooks/useQuestions";
 import { getAvatarUrl } from "@/lib/avatar";
 import { useUserStats, useUserActivity } from "@/hooks/useUserStats";
 import { formatDistanceToNow } from "date-fns";
+import { EditProfileModal } from "@/components/EditProfileModal";
 
 const Profile = () => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const { data: stats, isLoading: statsLoading } = useUserStats();
   const { data: activity = [], isLoading: activityLoading } = useUserActivity();
@@ -42,7 +45,9 @@ const Profile = () => {
                   <div className="flex-1 w-full min-w-0">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-between gap-2 mb-2">
                       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate max-w-full">{user?.name || "John Doe"}</h1>
-                      <Button size="sm" className="whitespace-nowrap flex-shrink-0">Edit Profile</Button>
+                      <Button size="sm" className="whitespace-nowrap flex-shrink-0" onClick={() => setIsEditModalOpen(true)}>
+                        Edit Profile
+                      </Button>
                     </div>
                     <div className="flex flex-wrap gap-2 md:gap-3 text-xs md:text-sm text-muted-foreground mb-3 md:mb-4 justify-center sm:justify-start">
                       {user?.location && (
@@ -51,12 +56,12 @@ const Profile = () => {
                           <span className="text-xs md:text-sm">{user.location}</span>
                         </span>
                       )}
-                      {user?.website && (
+                      {(user as any)?.dateOfBirth && (
                         <span className="flex items-center gap-1">
-                          <LinkIcon className="h-3 w-3 md:h-4 md:w-4" />
-                          <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm hover:underline">
-                            {user.website.replace(/^https?:\/\//, '')}
-                          </a>
+                          <Cake className="h-3 w-3 md:h-4 md:w-4" />
+                          <span className="text-xs md:text-sm">
+                            {new Date((user as any).dateOfBirth).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          </span>
                         </span>
                       )}
                       <span className="flex items-center gap-1">
@@ -66,6 +71,56 @@ const Profile = () => {
                         </span>
                       </span>
                     </div>
+                    
+                    {/* Social Links */}
+                    {(user?.website || user?.githubUrl || user?.twitterUrl || user?.linkedinUrl) && (
+                      <div className="flex flex-wrap gap-2 mb-3 md:mb-4 justify-center sm:justify-start">
+                        {user?.website && (
+                          <a 
+                            href={user.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <LinkIcon className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>Website</span>
+                          </a>
+                        )}
+                        {user?.githubUrl && (
+                          <a 
+                            href={user.githubUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Github className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>GitHub</span>
+                          </a>
+                        )}
+                        {user?.twitterUrl && (
+                          <a 
+                            href={user.twitterUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Twitter className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>Twitter</span>
+                          </a>
+                        )}
+                        {user?.linkedinUrl && (
+                          <a 
+                            href={user.linkedinUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Linkedin className="h-3 w-3 md:h-4 md:w-4" />
+                            <span>LinkedIn</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                     {user?.bio && (
                       <p className="text-xs sm:text-sm md:text-base text-muted-foreground mb-3 md:mb-4 text-center sm:text-left">
                         {user.bio}
@@ -226,6 +281,15 @@ const Profile = () => {
         </main>
       </div>
       <MobileNav />
+      
+      {/* Edit Profile Modal */}
+      {user && (
+        <EditProfileModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          user={user}
+        />
+      )}
     </div>
   );
 };

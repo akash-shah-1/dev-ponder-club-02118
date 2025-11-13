@@ -25,6 +25,7 @@ export interface UpdateUserProfile {
   githubUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
+  dateOfBirth?: string;
 }
 
 export const userService = {

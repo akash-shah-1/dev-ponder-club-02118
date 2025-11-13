@@ -25,6 +25,7 @@ export interface User {
   githubUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
+  dateOfBirth?: string;          // Date of birth
   lastActive?: string;           // Timestamp
 }
 
