@@ -137,4 +137,73 @@ Your Response:`;
 
     return prompt;
   }
+
+  async generateDetailedAnswer(questionId: string, questionTitle: string, questionDescription: string) {
+    try {
+      // Use the image generation model for detailed answers with diagrams
+      const imageModel = this.genAI.getGenerativeModel({ 
+        model: 'gemini-2.0-flash-exp'
+      });
+
+      // Build a detailed prompt for comprehensive answer with examples
+      const prompt = `You are an expert programming tutor. Provide a comprehensive, detailed answer to this coding question.
+
+Question: ${questionTitle}
+
+Description: ${questionDescription}
+
+REQUIREMENTS:
+1. Provide a DETAILED explanation (not just a brief answer)
+2. Include PRACTICAL CODE EXAMPLES with comments
+3. Explain WHY the solution works
+4. Include BEST PRACTICES
+5. Add COMMON PITFALLS to avoid
+6. If applicable, suggest alternative approaches
+7. Use clear formatting with sections
+
+FORMAT YOUR RESPONSE AS:
+
+## Understanding the Problem
+[Explain what the issue is and why it occurs]
+
+## Solution
+[Provide the main solution with detailed code example]
+
+\`\`\`javascript
+// Your code example here with comments
+\`\`\`
+
+## Explanation
+[Explain how and why the solution works]
+
+## Best Practices
+- [Practice 1]
+- [Practice 2]
+- [Practice 3]
+
+## Common Pitfalls
+- [Pitfall 1 and how to avoid it]
+- [Pitfall 2 and how to avoid it]
+
+## Alternative Approaches
+[If applicable, mention other ways to solve this]
+
+Provide a thorough, educational response that helps the developer truly understand the solution.`;
+
+      const result = await imageModel.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      return {
+        answer: text,
+        model: 'gemini-2.0-flash-exp',
+        questionId,
+        isAiGenerated: true,
+        generatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`Failed to generate detailed answer:`, error.message);
+      throw new Error('Failed to generate AI answer: ' + error.message);
+    }
+  }
 }

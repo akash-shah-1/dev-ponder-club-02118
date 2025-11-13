@@ -93,7 +93,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
     try {
       const fetchedQuestion = await questionsService.getById(questionId);
       setQuestion(fetchedQuestion);
-      
+
       // Use real answers from API if available, otherwise use mock answers
       if (fetchedQuestion.answers && fetchedQuestion.answers.length > 0) {
         setAnswers(fetchedQuestion.answers.map((answer: any) => ({
@@ -190,8 +190,8 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
               <div className="flex gap-3">
                 {/* Vote column */}
                 <div className="flex flex-col items-center gap-1.5">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className={cn(
                       "h-8 w-8",
@@ -204,8 +204,8 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                   <span className="text-base font-semibold">
                     {questionVoting.getScore(question.id, question.upvotes)}
                   </span>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className={cn(
                       "h-8 w-8",
@@ -277,66 +277,66 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                 </Card>
               ) : (
                 answers.map((answer) => (
-                <Card key={answer.id} className="p-4">
-                  <div className="flex gap-3">
-                    {/* Vote column */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8",
-                          answerVoting.getVote(answer.id) === 'up' ? 'text-primary' : ''
+                  <Card key={answer.id} className="p-4">
+                    <div className="flex gap-3">
+                      {/* Vote column */}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8",
+                            answerVoting.getVote(answer.id) === 'up' ? 'text-primary' : ''
+                          )}
+                          onClick={() => answerVoting.vote(answer.id, 'up')}
+                        >
+                          <ArrowBigUp className="h-5 w-5" />
+                        </Button>
+                        <span className="text-base font-semibold">
+                          {answerVoting.getScore(answer.id, answer.upvotes)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8",
+                            answerVoting.getVote(answer.id) === 'down' ? 'text-destructive' : ''
+                          )}
+                          onClick={() => answerVoting.vote(answer.id, 'down')}
+                        >
+                          <ArrowBigDown className="h-5 w-5" />
+                        </Button>
+                        {answer.isAccepted && (
+                          <CheckCircle2 className="h-5 w-5 text-accent" />
                         )}
-                        onClick={() => answerVoting.vote(answer.id, 'up')}
-                      >
-                        <ArrowBigUp className="h-5 w-5" />
-                      </Button>
-                      <span className="text-base font-semibold">
-                        {answerVoting.getScore(answer.id, answer.upvotes)}
-                      </span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className={cn(
-                          "h-8 w-8",
-                          answerVoting.getVote(answer.id) === 'down' ? 'text-destructive' : ''
-                        )}
-                        onClick={() => answerVoting.vote(answer.id, 'down')}
-                      >
-                        <ArrowBigDown className="h-5 w-5" />
-                      </Button>
-                      {answer.isAccepted && (
-                        <CheckCircle2 className="h-5 w-5 text-accent" />
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 space-y-3 min-w-0">
-                      <div className="prose max-w-none">
-                        <pre className="whitespace-pre-wrap font-sans text-xs overflow-x-auto">{answer.body}</pre>
                       </div>
 
-                      <div className="flex items-center justify-between pt-3 border-t">
-                        <span className="text-xs text-muted-foreground">{answer.timestamp}</span>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={answer.author.avatar || getAvatarUrl(answer.author.name)} />
-                            <AvatarFallback>{answer.author.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="text-xs font-medium">{answer.author.name}</div>
-                            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <TrendingUp className="h-2 w-2" />
-                              {answer.author.reputation} rep
+                      {/* Content */}
+                      <div className="flex-1 space-y-3 min-w-0">
+                        <div className="prose max-w-none">
+                          <pre className="whitespace-pre-wrap font-sans text-xs overflow-x-auto">{answer.body}</pre>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t">
+                          <span className="text-xs text-muted-foreground">{answer.timestamp}</span>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={answer.author.avatar || getAvatarUrl(answer.author.name)} />
+                              <AvatarFallback>{answer.author.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="text-xs font-medium">{answer.author.name}</div>
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <TrendingUp className="h-2 w-2" />
+                                {answer.author.reputation} rep
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))
               )}
             </div>
 
@@ -353,8 +353,8 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
           </div>
         </DrawerContent>
       </Drawer>
-      
-      <AnswerModal 
+
+      <AnswerModal
         open={showAnswerModal}
         onOpenChange={setShowAnswerModal}
         questionId={questionId}

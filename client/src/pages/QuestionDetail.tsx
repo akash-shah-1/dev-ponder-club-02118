@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, Eye, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Eye, ArrowLeft, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useVoteQuestion, useVoteAnswer } from "@/hooks/useVote";
 import { AnswerModal } from "@/components/AnswerModal";
@@ -16,6 +16,8 @@ import { questionsService, Question } from "@/api";
 import { VoteColumn } from "@/components/VoteColumn";
 import { AuthorInfo } from "@/components/AuthorInfo";
 import { useCurrentUser } from "@/hooks/useUser";
+import { aiService } from "@/api/services/ai.service";
+import { AiAnswerCard } from "@/components/AiAnswerCard";
 import * as party from "party-js";
 
 const QuestionDetail = () => {
@@ -29,6 +31,8 @@ const QuestionDetail = () => {
   const answerVote = useVoteAnswer();
   const [questionVoteState, setQuestionVoteState] = useState<'up' | 'down' | null>(null);
   const [answerVoteStates, setAnswerVoteStates] = useState<Record<string, 'up' | 'down' | null>>({});
+  const [aiAnswer, setAiAnswer] = useState<any>(null);
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
 
   useEffect(() => {
     const fetchQuestion = async () => {
@@ -87,6 +91,34 @@ const QuestionDetail = () => {
         description: "Failed to mark question as solved",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleGetAiAnswer = async () => {
+    if (!question || !id) return;
+
+    setIsGeneratingAi(true);
+    try {
+      const response = await aiService.answerQuestion(
+        id,
+        question.title,
+        question.description
+      );
+      
+      setAiAnswer(response);
+      
+      toast({
+        title: "AI Answer Generated!",
+        description: "Scroll down to see the detailed AI-generated answer with examples.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate AI answer. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingAi(false);
     }
   };
 
@@ -242,9 +274,44 @@ const QuestionDetail = () => {
 
             {/* Answers */}
             <div className="space-y-4">
-              <h2 className="text-lg md:text-xl font-bold">
-                {question.answers?.length || 0} {question.answers?.length === 1 ? 'Answer' : 'Answers'}
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg md:text-xl font-bold">
+                  {question.answers?.length || 0} {question.answers?.length === 1 ? 'Answer' : 'Answers'}
+                </h2>
+                <Button
+                  onClick={handleGetAiAnswer}
+                  disabled={isGeneratingAi || !!aiAnswer}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-purple-300 hover:bg-purple-50 dark:border-purple-700 dark:hover:bg-purple-950"
+                >
+                  {isGeneratingAi ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : aiAnswer ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      AI Answer Generated
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Get AI Answer
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* AI Generated Answer */}
+              {aiAnswer && (
+                <AiAnswerCard
+                  answer={aiAnswer.answer}
+                  generatedAt={aiAnswer.generatedAt}
+                  model={aiAnswer.model}
+                />
+              )}
 
               {question.answers && question.answers.length > 0 ? (
                 question.answers.map((answer: any) => (

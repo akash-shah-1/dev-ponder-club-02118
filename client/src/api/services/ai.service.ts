@@ -16,9 +16,26 @@ export interface AiChatResponse {
   contextUsed?: boolean;
 }
 
+export interface AiAnswerResponse {
+  answer: string;
+  model: string;
+  questionId: string;
+  isAiGenerated: boolean;
+  generatedAt: string;
+}
+
 export const aiService = {
   // Chat with AI - ask any question and get an answer
   async chat(question: string): Promise<AiChatResponse> {
     return apiClient.post<AiChatResponse>('/ai/chat', { question });
+  },
+
+  // Generate detailed AI answer for a question with examples
+  async answerQuestion(questionId: string, questionTitle: string, questionDescription: string): Promise<AiAnswerResponse> {
+    return apiClient.post<AiAnswerResponse>('/ai/answer-question', {
+      questionId,
+      questionTitle,
+      questionDescription,
+    });
   },
 };

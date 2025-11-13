@@ -20,6 +20,12 @@ export class AiController {
     return this.aiService.chat(body.question);
   }
 
+  @Post('answer-question')
+  @ApiOperation({ summary: 'Generate AI answer for a specific question with examples and diagrams' })
+  async answerQuestion(@Body() body: { questionId: string; questionTitle: string; questionDescription: string }) {
+    return this.aiService.generateDetailedAnswer(body.questionId, body.questionTitle, body.questionDescription);
+  }
+
   @Post('ingest/questions')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
