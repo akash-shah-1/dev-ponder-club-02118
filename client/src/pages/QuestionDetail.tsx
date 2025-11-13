@@ -365,8 +365,8 @@ const QuestionDetail = () => {
                 </div>
               </div>
 
-              {/* AI Generated Answer - Only show if question is not solved */}
-              {aiAnswer && !question.solved && (
+              {/* AI Generated Answer - Always show if exists */}
+              {aiAnswer && (
                 <AiAnswerCard
                   answer={aiAnswer.answer}
                   generatedAt={aiAnswer.generatedAt}
