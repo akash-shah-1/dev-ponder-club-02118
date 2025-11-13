@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, MessageCircle, BookOpen, Bookmark, Trophy, HelpCircle } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, MessageCircle, BookOpen, Bookmark, Trophy, HelpCircle, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -18,6 +18,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import NotificationPanel from "./NotificationPanel";
 import { useQuestions } from "@/hooks/useQuestions";
@@ -259,12 +267,34 @@ const Navigation = () => {
                     <Button size="sm" className="whitespace-nowrap">Ask Question</Button>
                   </Link>
 
-                  <Link to="/profile">
-                    <Avatar className="h-8 w-8 cursor-pointer">
-                      <AvatarImage src={user?.imageUrl || getAvatarUrl(user?.fullName || 'User')} />
-                      <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
-                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Avatar className="h-8 w-8 cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
+                        <AvatarImage src={user?.imageUrl || getAvatarUrl(user?.fullName || 'User')} />
+                        <AvatarFallback>{user?.firstName?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel>
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user?.fullName || 'User'}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user?.primaryEmailAddress?.emailAddress}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-red-600 focus:text-red-600">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <div className="flex items-center gap-2">
