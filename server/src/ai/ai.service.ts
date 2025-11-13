@@ -17,8 +17,8 @@ export class AiService {
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ 
-      model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash' 
+    this.model = this.genAI.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash'
     });
   }
 
@@ -71,7 +71,7 @@ export class AiService {
       } catch (error) {
         lastError = error;
         this.logger.error(`Gemini API Error (attempt ${attempt}/${maxRetries}):`, error.message);
-        
+
         // If it's a 503 (overloaded) and we have retries left, wait and try again
         if (error.status === 503 && attempt < maxRetries) {
           const waitTime = attempt * 2000; // 2s, 4s, 6s
@@ -79,7 +79,7 @@ export class AiService {
           await new Promise(resolve => setTimeout(resolve, waitTime));
           continue;
         }
-        
+
         // For other errors or last attempt, throw
         break;
       }
@@ -139,14 +139,18 @@ Your Response:`;
   }
 
   async generateDetailedAnswer(questionId: string, questionTitle: string, questionDescription: string) {
-    try {
-      // Use the image generation model for detailed answers with diagrams
-      const imageModel = this.genAI.getGenerativeModel({ 
-        model: 'gemini-2.0-flash-exp'
-      });
+    const maxRetries = 3;
+    let lastError;
 
-      // Build a detailed prompt for comprehensive answer with examples
-      const prompt = `You are an expert programming tutor. Provide a comprehensive, detailed answer to this coding question.
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Use the same model as chat for consistency
+        const detailedModel = this.genAI.getGenerativeModel({
+          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash'
+        });
+
+        // Build a detailed prompt for comprehensive answer with examples
+        const prompt = `You are an expert programming tutor. Provide a comprehensive, detailed answer to this coding question.
 
 Question: ${questionTitle}
 
@@ -190,20 +194,41 @@ FORMAT YOUR RESPONSE AS:
 
 Provide a thorough, educational response that helps the developer truly understand the solution.`;
 
-      const result = await imageModel.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+        const result = await detailedModel.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-      return {
-        answer: text,
-        model: 'gemini-2.0-flash-exp',
-        questionId,
-        isAiGenerated: true,
-        generatedAt: new Date().toISOString(),
-      };
-    } catch (error) {
-      this.logger.error(`Failed to generate detailed answer:`, error.message);
-      throw new Error('Failed to generate AI answer: ' + error.message);
+        return {
+          answer: text,
+          model: this.configService.get<string>('GEMINI_MODEL') || 'gemini-1.5-flash',
+          questionId,
+          isAiGenerated: true,
+          generatedAt: new Date().toISOString(),
+        };
+      } catch (error) {
+        lastError = error;
+        this.logger.error(`Failed to generate detailed answer (attempt ${attempt}/${maxRetries}):`, error.message);
+
+        // If it's a quota error (429) or overloaded (503) and we have retries left, wait and try again
+        if ((error.status === 429 || error.status === 503) && attempt < maxRetries) {
+          const waitTime = error.status === 503 ? attempt * 5000 : attempt * 3000; // 5s, 10s, 15s for 503; 3s, 6s, 9s for 429
+          this.logger.log(`${error.status === 503 ? 'Service overloaded' : 'Quota exceeded'}, waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        // For other errors or last attempt, break
+        break;
+      }
     }
+
+    // If all retries failed, throw error with helpful message
+    const errorMessage = lastError?.status === 503
+      ? 'AI service is currently overloaded. Please try again in a few moments.'
+      : lastError?.status === 429
+        ? 'API quota exceeded. Please try again later.'
+        : 'Failed to generate AI answer. Please try again.';
+
+    throw new Error(errorMessage);
   }
 }
