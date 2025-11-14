@@ -17,6 +17,20 @@ interface SummaryDrawerProps {
 
 export const SummaryDrawer = ({ open, onOpenChange, summary, generatedAt }: SummaryDrawerProps) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  // Stop voice when drawer closes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && isSpeaking) {
+      const audioElement = document.getElementById('tts-audio-drawer') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+      setIsSpeaking(false);
+    }
+    onOpenChange(newOpen);
+  };
 
   const toggleVoice = () => {
     if (isSpeaking) {
@@ -32,6 +46,12 @@ export const SummaryDrawer = ({ open, onOpenChange, summary, generatedAt }: Summ
   };
 
   const speakText = async (text: string) => {
+    // Check if text is too long
+    if (text.length > 500) {
+      setShowUpgrade(true);
+      return;
+    }
+
     setIsSpeaking(true);
     try {
       const audioBase64 = await aiService.textToSpeech(text);
@@ -62,7 +82,8 @@ export const SummaryDrawer = ({ open, onOpenChange, summary, generatedAt }: Summ
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="max-h-[90vh]">
         <DrawerHeader>
           <div className="flex items-center gap-2">
@@ -121,5 +142,51 @@ export const SummaryDrawer = ({ open, onOpenChange, summary, generatedAt }: Summ
         </div>
       </DrawerContent>
     </Drawer>
+
+    {/* Upgrade Drawer */}
+    <Drawer open={showUpgrade} onOpenChange={setShowUpgrade}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle className="text-xl font-bold text-center">🎙️ Upgrade to Premium Voice</DrawerTitle>
+        </DrawerHeader>
+        <div className="px-4 pb-4 space-y-4">
+          <div className="text-center">
+            <p className="text-muted-foreground text-sm mb-4">
+              This content is too long for the free voice tier.
+            </p>
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 p-4 rounded-lg border-2 border-purple-200 dark:border-purple-800">
+              <h3 className="text-lg font-bold mb-2">Premium Voice Features</h3>
+              <ul className="text-left space-y-2 text-xs">
+                <li className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span> Unlimited voice length
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span> Premium voice quality
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span> Multiple voice options
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-600">✓</span> Faster generation
+                </li>
+              </ul>
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-2xl font-bold text-purple-600">$5/month</p>
+                <p className="text-xs text-muted-foreground">Cancel anytime</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowUpgrade(false)}>
+              Maybe Later
+            </Button>
+            <Button className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+              Upgrade Now
+            </Button>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+    </>
   );
 };
