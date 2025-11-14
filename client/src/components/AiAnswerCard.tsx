@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Bot, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Bot, ChevronDown, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface AiAnswerCardProps {
   answer: string;
@@ -16,6 +18,70 @@ interface AiAnswerCardProps {
 
 export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const toggleVoice = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      speakText(answer);
+    }
+  };
+
+  const speakText = (text: string) => {
+    const cleanText = cleanTextForSpeech(text);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Google') && voice.lang.includes('en')
+    ) || voices.find(voice => 
+      voice.lang.includes('en-US') || voice.lang.includes('en-GB')
+    );
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+        toast({
+          title: "Voice Error",
+          description: "Failed to play voice. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const cleanTextForSpeech = (text: string): string => {
+    let cleaned = text;
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, ' code example. ');
+    cleaned = cleaned.replace(/`[^`]+`/g, ' ');
+    cleaned = cleaned.replace(/#{1,6}\s+/g, '');
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
+    cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
+    cleaned = cleaned.replace(/_([^_]+)_/g, '$1');
+    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
+    cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    if (cleaned.length > 1000) {
+      cleaned = cleaned.substring(0, 1000) + '... and more.';
+    }
+    return cleaned;
+  };
   
   return (
     <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800 shadow-lg">
@@ -78,8 +144,8 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
         )}
       </div>
 
-      {/* Expand/Collapse Button */}
-      <div className="flex justify-center mt-4">
+      {/* Expand/Collapse and Voice Buttons */}
+      <div className="flex justify-center gap-2 mt-4">
         <Button
           variant="ghost"
           size="sm"
@@ -95,6 +161,29 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
             <>
               <ChevronDown className="h-4 w-4" />
               Show More
+            </>
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleVoice}
+          className={cn(
+            "gap-2",
+            isSpeaking
+              ? "text-green-600 hover:text-green-700"
+              : "text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-purple-100"
+          )}
+        >
+          {isSpeaking ? (
+            <>
+              <VolumeX className="h-4 w-4" />
+              Stop
+            </>
+          ) : (
+            <>
+              <Volume2 className="h-4 w-4" />
+              Listen
             </>
           )}
         </Button>

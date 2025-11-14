@@ -236,38 +236,22 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
     }
   };
 
-  const toggleVoiceMode = () => {
+  const toggleVoiceMode = (text: string) => {
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
     } else {
-      speakAnswer();
+      speakText(text);
     }
   };
 
-  const speakAnswer = () => {
-    if (!question) return;
+  const speakText = (text: string) => {
+    if (!text) return;
 
-    // Find the best answer to speak
-    let textToSpeak = "";
-
-    if (aiAnswer) {
-      // Clean markdown from AI answer for better speech
-      textToSpeak = cleanTextForSpeech(aiAnswer.answer);
-    } else if (answers.length > 0) {
-      // Find accepted answer or highest voted answer
-      const acceptedAnswer = answers.find(a => a.isAccepted);
-      const topAnswer = acceptedAnswer || answers.reduce((prev, current) =>
-        (current.upvotes > prev.upvotes) ? current : prev
-      );
-      textToSpeak = cleanTextForSpeech(topAnswer.body);
-    } else {
-      textToSpeak = "No answers available yet for this question.";
-    }
-
+    const textToSpeak = cleanTextForSpeech(text);
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     
-    // Try to get a better voice (Google UK English Female is usually good)
+    // Try to get a better voice
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(voice => 
       voice.name.includes('Google') && voice.lang.includes('en')
@@ -279,19 +263,22 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
       utterance.voice = preferredVoice;
     }
     
-    utterance.rate = 0.95; // Slightly slower for clarity
-    utterance.pitch = 1.0; // Normal pitch
-    utterance.volume = 1.0; // Full volume
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
       setIsSpeaking(false);
-      toast({
-        title: "Voice Error",
-        description: "Failed to play voice. Please try again.",
-        variant: "destructive",
-      });
+      // Only show error if it's not a cancellation
+      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+        toast({
+          title: "Voice Error",
+          description: "Failed to play voice. Please try again.",
+          variant: "destructive",
+        });
+      }
     };
 
     window.speechSynthesis.speak(utterance);
@@ -488,32 +475,6 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                   )}
                 </Button>
               )}
-
-              {question?.solved && (answers.length > 0 || aiAnswer) && (
-                <Button
-                  onClick={toggleVoiceMode}
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    "gap-2",
-                    isSpeaking
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                      : "border-gray-300"
-                  )}
-                >
-                  {isSpeaking ? (
-                    <>
-                      <VolumeX className="h-4 w-4" />
-                      Stop
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-4 w-4" />
-                      Voice
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
 
             {/* Answers */}
@@ -555,7 +516,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                     )}
                   </div>
 
-                  <div className="flex justify-center mt-3">
+                  <div className="flex justify-center gap-2 mt-3">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -571,6 +532,29 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                         <>
                           <ChevronDown className="h-4 w-4" />
                           Show More
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleVoiceMode(aiAnswer.answer)}
+                      className={cn(
+                        "gap-2",
+                        isSpeaking
+                          ? "text-green-600 hover:text-green-700"
+                          : "text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-purple-100"
+                      )}
+                    >
+                      {isSpeaking ? (
+                        <>
+                          <VolumeX className="h-4 w-4" />
+                          Stop
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-4 w-4" />
+                          Listen
                         </>
                       )}
                     </Button>
@@ -607,6 +591,32 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
                   <div className="prose max-w-none text-xs max-h-[400px] overflow-y-auto">
                     <MarkdownRenderer content={summary.summary} />
+                  </div>
+
+                  <div className="flex justify-center mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleVoiceMode(summary.summary)}
+                      className={cn(
+                        "gap-2",
+                        isSpeaking
+                          ? "text-green-600 hover:text-green-700"
+                          : "text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+                      )}
+                    >
+                      {isSpeaking ? (
+                        <>
+                          <VolumeX className="h-4 w-4" />
+                          Stop
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-4 w-4" />
+                          Listen
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
