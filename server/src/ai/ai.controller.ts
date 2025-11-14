@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import { EmbeddingService } from './services/embedding.service';
 import { IngestionService } from './services/ingestion.service';
-import { ElevenLabsTtsService } from './services/elevenlabs-tts.service';
+import { TtsFactoryService } from './services/tts-factory.service';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
 
 @ApiTags('ai')
@@ -13,7 +13,7 @@ export class AiController {
     private readonly aiService: AiService,
     private readonly embeddingService: EmbeddingService,
     private readonly ingestionService: IngestionService,
-    private readonly elevenLabsTtsService: ElevenLabsTtsService,
+    private readonly ttsFactoryService: TtsFactoryService,
   ) {}
 
   @Post('chat')
@@ -77,9 +77,9 @@ export class AiController {
   }
 
   @Post('text-to-speech')
-  @ApiOperation({ summary: 'Convert text to natural speech using ElevenLabs' })
+  @ApiOperation({ summary: 'Convert text to natural speech' })
   async textToSpeech(@Body() body: { text: string }) {
-    const audioContent = await this.elevenLabsTtsService.textToSpeech(body.text);
+    const audioContent = await this.ttsFactoryService.textToSpeech(body.text);
     return {
       audioContent,
       format: 'mp3',
@@ -90,6 +90,6 @@ export class AiController {
   @Get('voices')
   @ApiOperation({ summary: 'Get available TTS voices' })
   async getVoices() {
-    return this.elevenLabsTtsService.getAvailableVoices();
+    return this.ttsFactoryService.getAvailableVoices();
   }
 }

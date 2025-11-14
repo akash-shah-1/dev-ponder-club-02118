@@ -37,6 +37,14 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
   };
 
   const speakText = async (text: string) => {
+    // Check usage count
+    const usageCount = parseInt(localStorage.getItem('voice_usage_count') || '0');
+    
+    if (usageCount >= 1) {
+      setShowUpgrade(true);
+      return;
+    }
+
     // Check if text is too long
     if (text.length > 500) {
       setShowUpgrade(true);
@@ -62,6 +70,10 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
       };
 
       await audioElement.play();
+      
+      // Increment usage count
+      const newCount = parseInt(localStorage.getItem('voice_usage_count') || '0') + 1;
+      localStorage.setItem('voice_usage_count', newCount.toString());
     } catch (error) {
       setIsSpeaking(false);
       toast({

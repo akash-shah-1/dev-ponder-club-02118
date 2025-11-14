@@ -21,7 +21,7 @@ export class ElevenLabsTtsService {
       // Clean the text
       const cleanText = this.cleanTextForSpeech(text);
       // Limit to 500 characters to save tokens
-      const truncatedText = cleanText.substring(0, 50);
+      const truncatedText = cleanText.substring(0, 200);
 
       this.logger.log(`Generating speech for ${truncatedText.length} characters`);
 
