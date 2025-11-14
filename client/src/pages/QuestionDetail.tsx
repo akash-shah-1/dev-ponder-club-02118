@@ -367,12 +367,14 @@ const QuestionDetail = () => {
 
               {/* AI Generated Answer - Always show if exists */}
               {aiAnswer && (
-                <AiAnswerCard
-                  answer={aiAnswer.answer}
-                  generatedAt={aiAnswer.generatedAt}
-                  model={aiAnswer.model}
-                  images={aiAnswer.images}
-                />
+                <div className="max-h-[600px]">
+                  <AiAnswerCard
+                    answer={aiAnswer.answer}
+                    generatedAt={aiAnswer.generatedAt}
+                    model={aiAnswer.model}
+                    images={aiAnswer.images}
+                  />
+                </div>
               )}
 
               {question.answers && question.answers.length > 0 ? (

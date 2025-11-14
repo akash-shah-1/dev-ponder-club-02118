@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { ArrowBigUp, ArrowBigDown, MessageSquare, Eye, CheckCircle2, TrendingUp, Sparkles, Loader2, FileText, Volume2, VolumeX, Bot } from "lucide-react";
+import { ArrowBigUp, ArrowBigDown, MessageSquare, Eye, CheckCircle2, TrendingUp, Sparkles, Loader2, FileText, Volume2, VolumeX, Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useVoting } from "@/hooks/useVoting";
 import { AnswerModal } from "@/components/AnswerModal";
@@ -85,15 +85,16 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
   const answerVoting = useVoting('answer');
   const [aiAnswer, setAiAnswer] = useState<any>(null);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [summary, setSummary] = useState<any>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAiAnswerExpanded, setIsAiAnswerExpanded] = useState(false);
 
   useEffect(() => {
     if (open && questionId) {
       fetchQuestion();
     }
-    
+
     // Cleanup speech synthesis when drawer closes
     return () => {
       if (window.speechSynthesis) {
@@ -132,7 +133,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
           setAnswers([]);
         }
       }
-      
+
       // Check if AI answer already exists
       try {
         const existingAiAnswer = await aiService.getAiAnswer(questionId);
@@ -188,9 +189,9 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
         question.title,
         question.description
       );
-      
+
       setAiAnswer(response);
-      
+
       toast({
         title: "AI Answer Generated!",
         description: "Scroll down to see the detailed AI-generated answer.",
@@ -217,10 +218,12 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
         question.description,
         answers.map(a => ({ content: a.body, author: a.author }))
       );
+
+      setSummary(response);
       
       toast({
         title: "Summary Generated!",
-        description: response.summary.substring(0, 100) + "...",
+        description: "Scroll down to see the AI-generated summary.",
       });
     } catch (error) {
       toast({
@@ -247,13 +250,13 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
     // Find the best answer to speak
     let textToSpeak = "";
-    
+
     if (aiAnswer) {
       textToSpeak = `AI Generated Answer: ${aiAnswer.answer}`;
     } else if (answers.length > 0) {
       // Find accepted answer or highest voted answer
       const acceptedAnswer = answers.find(a => a.isAccepted);
-      const topAnswer = acceptedAnswer || answers.reduce((prev, current) => 
+      const topAnswer = acceptedAnswer || answers.reduce((prev, current) =>
         (current.upvotes > prev.upvotes) ? current : prev
       );
       textToSpeak = `Top Answer: ${topAnswer.body}`;
@@ -265,7 +268,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
     utterance.rate = 0.9;
     utterance.pitch = 1;
     utterance.volume = 1;
-    
+
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => {
@@ -411,7 +414,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                   </>
                 )}
               </Button>
-              
+
               {!question?.solved && !aiAnswer && (
                 <Button
                   onClick={handleGetAiAnswer}
@@ -441,8 +444,8 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                   size="sm"
                   className={cn(
                     "gap-2",
-                    isSpeaking 
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/20" 
+                    isSpeaking
+                      ? "border-green-500 bg-green-50 dark:bg-green-950/20"
                       : "border-gray-300"
                   )}
                 >
@@ -488,13 +491,75 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                     </div>
                   </div>
 
-                  <div className="prose max-w-none text-xs">
-                    <MarkdownRenderer content={aiAnswer.answer} />
+                  <div 
+                    className="relative overflow-hidden transition-all duration-300"
+                    style={{ maxHeight: isAiAnswerExpanded ? 'none' : '300px' }}
+                  >
+                    <div className="prose max-w-none text-xs overflow-y-auto" style={{ maxHeight: isAiAnswerExpanded ? 'none' : '300px' }}>
+                      <MarkdownRenderer content={aiAnswer.answer} />
+                    </div>
+                    {!isAiAnswerExpanded && (
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-purple-50 via-purple-50/80 to-transparent dark:from-purple-950/20 dark:via-purple-950/10 pointer-events-none" />
+                    )}
+                  </div>
+
+                  <div className="flex justify-center mt-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAiAnswerExpanded(!isAiAnswerExpanded)}
+                      className="gap-2 text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-purple-100"
+                    >
+                      {isAiAnswerExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show More
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
                     <p className="text-[10px] text-muted-foreground italic">
                       💡 This answer was generated by AI. Please verify the solution.
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              {/* Summary */}
+              {summary && (
+                <Card className="p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-2 mb-3">
+                    <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
+                      <FileText className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-sm">AI-Generated Summary</h4>
+                        <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          AI Summary
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Generated {new Date(summary.generatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="prose max-w-none text-xs max-h-[400px] overflow-y-auto">
+                    <MarkdownRenderer content={summary.summary} />
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
+                    <p className="text-[10px] text-muted-foreground italic">
+                      💡 This summary was generated by AI to help you quickly understand the discussion.
                     </p>
                   </div>
                 </Card>
@@ -510,13 +575,13 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                 (() => {
                   // Find answer with max upvotes
                   const maxUpvotes = Math.max(...answers.map(a => a.upvotes));
-                  
+
                   return answers.map((answer) => {
                     const isTopAnswer = answer.upvotes === maxUpvotes && maxUpvotes > 0 && answers.length > 1;
-                    
+
                     return (
-                      <Card 
-                        key={answer.id} 
+                      <Card
+                        key={answer.id}
                         className={cn(
                           "p-4",
                           isTopAnswer && "border-2 border-amber-400 bg-amber-50/50 dark:bg-amber-950/20"

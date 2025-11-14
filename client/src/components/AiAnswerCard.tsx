@@ -16,7 +16,6 @@ interface AiAnswerCardProps {
 
 export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const maxHeight = 400; // Max height in pixels before showing expand button
   
   return (
     <Card className="p-4 md:p-6 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800 shadow-lg">
@@ -66,11 +65,16 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
 
       <div 
         className="relative overflow-hidden transition-all duration-300"
-        style={{ maxHeight: isExpanded ? 'none' : `${maxHeight}px` }}
+        style={{ maxHeight: isExpanded ? 'none' : '400px' }}
       >
-        <MarkdownRenderer content={answer} />
+        <div 
+          className="overflow-y-auto prose max-w-none"
+          style={{ maxHeight: isExpanded ? 'none' : '400px' }}
+        >
+          <MarkdownRenderer content={answer} />
+        </div>
         {!isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-purple-50 via-purple-50/80 to-transparent dark:from-purple-950/20 dark:via-purple-950/10" />
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-purple-50 via-purple-50/80 to-transparent dark:from-purple-950/20 dark:via-purple-950/10 pointer-events-none" />
         )}
       </div>
 
