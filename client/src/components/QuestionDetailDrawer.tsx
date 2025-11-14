@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar";
 import { aiService } from "@/api/services/ai.service";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { SummaryModal } from "@/components/SummaryModal";
 
 interface QuestionDetailDrawerProps {
   open: boolean;
@@ -89,6 +90,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isAiAnswerExpanded, setIsAiAnswerExpanded] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   useEffect(() => {
     if (open && questionId) {
@@ -220,10 +222,11 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
       );
 
       setSummary(response);
-      
+      setShowSummaryModal(true);
+
       toast({
         title: "Summary Generated!",
-        description: "Scroll down to see the AI-generated summary.",
+        description: "View the AI-generated summary.",
       });
     } catch (error) {
       toast({
@@ -250,19 +253,19 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
     const textToSpeak = cleanTextForSpeech(text);
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    
+
     // Try to get a better voice
     const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
+    const preferredVoice = voices.find(voice =>
       voice.name.includes('Google') && voice.lang.includes('en')
-    ) || voices.find(voice => 
+    ) || voices.find(voice =>
       voice.lang.includes('en-US') || voice.lang.includes('en-GB')
     );
-    
+
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
-    
+
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
@@ -286,39 +289,39 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
   const cleanTextForSpeech = (text: string): string => {
     let cleaned = text;
-    
+
     // Remove code blocks
     cleaned = cleaned.replace(/```[\s\S]*?```/g, ' code example. ');
-    
+
     // Remove inline code
     cleaned = cleaned.replace(/`[^`]+`/g, ' ');
-    
+
     // Remove markdown headers
     cleaned = cleaned.replace(/#{1,6}\s+/g, '');
-    
+
     // Remove markdown bold/italic
     cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
     cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
     cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
     cleaned = cleaned.replace(/_([^_]+)_/g, '$1');
-    
+
     // Remove markdown links - keep link text
     cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-    
+
     // Remove bullet points
     cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
-    
+
     // Remove numbered lists
     cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
-    
+
     // Remove extra whitespace
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
+
     // Limit length to avoid very long speech
     if (cleaned.length > 1000) {
       cleaned = cleaned.substring(0, 1000) + '... and more.';
     }
-    
+
     return cleaned;
   };
 
@@ -504,7 +507,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                     </div>
                   </div>
 
-                  <div 
+                  <div
                     className="relative overflow-hidden transition-all duration-300"
                     style={{ maxHeight: isAiAnswerExpanded ? 'none' : '300px' }}
                   >
@@ -568,64 +571,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
                 </Card>
               )}
 
-              {/* Summary */}
-              {summary && (
-                <Card className="p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-cyan-950/20 border-2 border-blue-200 dark:border-blue-800">
-                  <div className="flex items-start gap-2 mb-3">
-                    <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg">
-                      <FileText className="h-4 w-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-sm">AI-Generated Summary</h4>
-                        <Badge variant="secondary" className="gap-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-[10px]">
-                          <Sparkles className="h-2.5 w-2.5" />
-                          AI Summary
-                        </Badge>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Generated {new Date(summary.generatedAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="prose max-w-none text-xs max-h-[400px] overflow-y-auto">
-                    <MarkdownRenderer content={summary.summary} />
-                  </div>
-
-                  <div className="flex justify-center mt-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleVoiceMode(summary.summary)}
-                      className={cn(
-                        "gap-2",
-                        isSpeaking
-                          ? "text-green-600 hover:text-green-700"
-                          : "text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
-                      )}
-                    >
-                      {isSpeaking ? (
-                        <>
-                          <VolumeX className="h-4 w-4" />
-                          Stop
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="h-4 w-4" />
-                          Listen
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                    <p className="text-[10px] text-muted-foreground italic">
-                      💡 This summary was generated by AI to help you quickly understand the discussion.
-                    </p>
-                  </div>
-                </Card>
-              )}
 
               {answers.length === 0 && !aiAnswer ? (
                 <Card className="p-4">
@@ -744,6 +690,15 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
         questionId={questionId}
         onAnswerSubmitted={refreshAnswers}
       />
+
+      {summary && (
+        <SummaryModal
+          open={showSummaryModal}
+          onOpenChange={setShowSummaryModal}
+          summary={summary.summary}
+          generatedAt={summary.generatedAt}
+        />
+      )}
     </>
   );
 };
