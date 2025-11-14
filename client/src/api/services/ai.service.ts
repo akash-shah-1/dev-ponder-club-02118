@@ -64,15 +64,4 @@ export const aiService = {
       answers,
     });
   },
-
-  // Convert text to natural speech using Google TTS
-  async textToSpeech(text: string): Promise<string> {
-    const response: any = await apiClient.post('/ai/text-to-speech', { text });
-    return response.audioContent; // base64 encoded MP3
-  },
-
-  // Get available TTS voices
-  async getVoices(): Promise<any[]> {
-    return apiClient.get('/ai/voices');
-  },
 };

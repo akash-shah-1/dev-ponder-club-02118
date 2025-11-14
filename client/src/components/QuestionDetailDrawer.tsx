@@ -238,67 +238,101 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
   const toggleVoiceMode = () => {
     if (isSpeaking) {
-      // Stop current audio
-      const audioElement = document.getElementById('tts-audio') as HTMLAudioElement;
-      if (audioElement) {
-        audioElement.pause();
-        audioElement.currentTime = 0;
-      }
+      window.speechSynthesis.cancel();
       setIsSpeaking(false);
     } else {
       speakAnswer();
     }
   };
 
-  const speakAnswer = async () => {
+  const speakAnswer = () => {
     if (!question) return;
 
     // Find the best answer to speak
     let textToSpeak = "";
 
     if (aiAnswer) {
-      textToSpeak = aiAnswer.answer;
+      // Clean markdown from AI answer for better speech
+      textToSpeak = cleanTextForSpeech(aiAnswer.answer);
     } else if (answers.length > 0) {
       // Find accepted answer or highest voted answer
       const acceptedAnswer = answers.find(a => a.isAccepted);
       const topAnswer = acceptedAnswer || answers.reduce((prev, current) =>
         (current.upvotes > prev.upvotes) ? current : prev
       );
-      textToSpeak = topAnswer.body;
+      textToSpeak = cleanTextForSpeech(topAnswer.body);
     } else {
       textToSpeak = "No answers available yet for this question.";
     }
 
-    setIsSpeaking(true);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    
+    // Try to get a better voice (Google UK English Female is usually good)
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+      voice.name.includes('Google') && voice.lang.includes('en')
+    ) || voices.find(voice => 
+      voice.lang.includes('en-US') || voice.lang.includes('en-GB')
+    );
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    
+    utterance.rate = 0.95; // Slightly slower for clarity
+    utterance.pitch = 1.0; // Normal pitch
+    utterance.volume = 1.0; // Full volume
 
-    try {
-      // Get natural speech from Google TTS
-      const audioBase64 = await aiService.textToSpeech(textToSpeak);
-      
-      // Create audio element and play
-      const audioElement = document.getElementById('tts-audio') as HTMLAudioElement || document.createElement('audio');
-      audioElement.id = 'tts-audio';
-      audioElement.src = `data:audio/mp3;base64,${audioBase64}`;
-      
-      audioElement.onended = () => setIsSpeaking(false);
-      audioElement.onerror = () => {
-        setIsSpeaking(false);
-        toast({
-          title: "Voice Error",
-          description: "Failed to play voice. Please try again.",
-          variant: "destructive",
-        });
-      };
-
-      await audioElement.play();
-    } catch (error) {
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => {
       setIsSpeaking(false);
       toast({
         title: "Voice Error",
-        description: "Failed to generate voice. Please try again.",
+        description: "Failed to play voice. Please try again.",
         variant: "destructive",
       });
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const cleanTextForSpeech = (text: string): string => {
+    let cleaned = text;
+    
+    // Remove code blocks
+    cleaned = cleaned.replace(/```[\s\S]*?```/g, ' code example. ');
+    
+    // Remove inline code
+    cleaned = cleaned.replace(/`[^`]+`/g, ' ');
+    
+    // Remove markdown headers
+    cleaned = cleaned.replace(/#{1,6}\s+/g, '');
+    
+    // Remove markdown bold/italic
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
+    cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
+    cleaned = cleaned.replace(/_([^_]+)_/g, '$1');
+    
+    // Remove markdown links - keep link text
+    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    
+    // Remove bullet points
+    cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
+    
+    // Remove numbered lists
+    cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
+    
+    // Remove extra whitespace
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Limit length to avoid very long speech
+    if (cleaned.length > 1000) {
+      cleaned = cleaned.substring(0, 1000) + '... and more.';
     }
+    
+    return cleaned;
   };
 
   if (loading) {

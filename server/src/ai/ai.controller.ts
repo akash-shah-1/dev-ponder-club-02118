@@ -3,7 +3,6 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
 import { EmbeddingService } from './services/embedding.service';
 import { IngestionService } from './services/ingestion.service';
-import { TtsService } from './services/tts.service';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
 
 @ApiTags('ai')
@@ -13,7 +12,6 @@ export class AiController {
     private readonly aiService: AiService,
     private readonly embeddingService: EmbeddingService,
     private readonly ingestionService: IngestionService,
-    private readonly ttsService: TtsService,
   ) {}
 
   @Post('chat')
@@ -74,22 +72,5 @@ export class AiController {
   @ApiOperation({ summary: 'Get embedding statistics' })
   async getEmbeddingStats() {
     return this.embeddingService.getStats();
-  }
-
-  @Post('text-to-speech')
-  @ApiOperation({ summary: 'Convert text to natural speech using Google TTS' })
-  async textToSpeech(@Body() body: { text: string }) {
-    const audioContent = await this.ttsService.textToSpeech(body.text);
-    return {
-      audioContent, // base64 encoded MP3
-      format: 'mp3',
-      encoding: 'base64',
-    };
-  }
-
-  @Get('voices')
-  @ApiOperation({ summary: 'Get available TTS voices' })
-  async getVoices() {
-    return this.ttsService.getAvailableVoices();
   }
 }
