@@ -238,49 +238,67 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
   const toggleVoiceMode = () => {
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      // Stop current audio
+      const audioElement = document.getElementById('tts-audio') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
       setIsSpeaking(false);
     } else {
       speakAnswer();
     }
   };
 
-  const speakAnswer = () => {
+  const speakAnswer = async () => {
     if (!question) return;
 
     // Find the best answer to speak
     let textToSpeak = "";
 
     if (aiAnswer) {
-      textToSpeak = `AI Generated Answer: ${aiAnswer.answer}`;
+      textToSpeak = aiAnswer.answer;
     } else if (answers.length > 0) {
       // Find accepted answer or highest voted answer
       const acceptedAnswer = answers.find(a => a.isAccepted);
       const topAnswer = acceptedAnswer || answers.reduce((prev, current) =>
         (current.upvotes > prev.upvotes) ? current : prev
       );
-      textToSpeak = `Top Answer: ${topAnswer.body}`;
+      textToSpeak = topAnswer.body;
     } else {
       textToSpeak = "No answers available yet for this question.";
     }
 
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    setIsSpeaking(true);
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => {
+    try {
+      // Get natural speech from Google TTS
+      const audioBase64 = await aiService.textToSpeech(textToSpeak);
+      
+      // Create audio element and play
+      const audioElement = document.getElementById('tts-audio') as HTMLAudioElement || document.createElement('audio');
+      audioElement.id = 'tts-audio';
+      audioElement.src = `data:audio/mp3;base64,${audioBase64}`;
+      
+      audioElement.onended = () => setIsSpeaking(false);
+      audioElement.onerror = () => {
+        setIsSpeaking(false);
+        toast({
+          title: "Voice Error",
+          description: "Failed to play voice. Please try again.",
+          variant: "destructive",
+        });
+      };
+
+      await audioElement.play();
+    } catch (error) {
       setIsSpeaking(false);
       toast({
         title: "Voice Error",
-        description: "Failed to play voice. Please try again.",
+        description: "Failed to generate voice. Please try again.",
         variant: "destructive",
       });
-    };
-
-    window.speechSynthesis.speak(utterance);
+    }
   };
 
   if (loading) {
