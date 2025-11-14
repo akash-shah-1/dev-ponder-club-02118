@@ -64,4 +64,15 @@ export const aiService = {
       answers,
     });
   },
+
+  // Convert text to speech using ElevenLabs
+  async textToSpeech(text: string): Promise<string> {
+    const response: any = await apiClient.post('/ai/text-to-speech', { text });
+    return response.audioContent;
+  },
+
+  // Get available voices
+  async getVoices(): Promise<any[]> {
+    return apiClient.get('/ai/voices');
+  },
 };

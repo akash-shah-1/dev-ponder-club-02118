@@ -6,6 +6,7 @@ import { Sparkles, FileText, Volume2, VolumeX } from "lucide-react";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { aiService } from "@/api/services/ai.service";
 
 interface SummaryDrawerProps {
   open: boolean;
@@ -19,65 +20,45 @@ export const SummaryDrawer = ({ open, onOpenChange, summary, generatedAt }: Summ
 
   const toggleVoice = () => {
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      const audioElement = document.getElementById('tts-audio-drawer') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
       setIsSpeaking(false);
     } else {
       speakText(summary);
     }
   };
 
-  const speakText = (text: string) => {
-    const cleanText = cleanTextForSpeech(text);
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.name.includes('Google') && voice.lang.includes('en')
-    ) || voices.find(voice => 
-      voice.lang.includes('en-US') || voice.lang.includes('en-GB')
-    );
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-    
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (event) => {
-      setIsSpeaking(false);
-      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+  const speakText = async (text: string) => {
+    setIsSpeaking(true);
+    try {
+      const audioBase64 = await aiService.textToSpeech(text);
+      
+      const audioElement = document.getElementById('tts-audio-drawer') as HTMLAudioElement || document.createElement('audio');
+      audioElement.id = 'tts-audio-drawer';
+      audioElement.src = `data:audio/mpeg;base64,${audioBase64}`;
+      
+      audioElement.onended = () => setIsSpeaking(false);
+      audioElement.onerror = () => {
+        setIsSpeaking(false);
         toast({
           title: "Voice Error",
           description: "Failed to play voice. Please try again.",
           variant: "destructive",
         });
-      }
-    };
+      };
 
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const cleanTextForSpeech = (text: string): string => {
-    let cleaned = text;
-    cleaned = cleaned.replace(/```[\s\S]*?```/g, ' code example. ');
-    cleaned = cleaned.replace(/`[^`]+`/g, ' ');
-    cleaned = cleaned.replace(/#{1,6}\s+/g, '');
-    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
-    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
-    cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
-    cleaned = cleaned.replace(/_([^_]+)_/g, '$1');
-    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-    cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
-    cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    if (cleaned.length > 1000) {
-      cleaned = cleaned.substring(0, 1000) + '... and more.';
+      await audioElement.play();
+    } catch (error) {
+      setIsSpeaking(false);
+      toast({
+        title: "Voice Error",
+        description: "Failed to generate voice. Please try again.",
+        variant: "destructive",
+      });
     }
-    return cleaned;
   };
 
   return (

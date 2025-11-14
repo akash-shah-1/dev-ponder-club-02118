@@ -241,88 +241,47 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
 
   const toggleVoiceMode = (text: string) => {
     if (isSpeaking) {
-      window.speechSynthesis.cancel();
+      const audioElement = document.getElementById('tts-audio-question') as HTMLAudioElement;
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
       setIsSpeaking(false);
     } else {
       speakText(text);
     }
   };
 
-  const speakText = (text: string) => {
+  const speakText = async (text: string) => {
     if (!text) return;
 
-    const textToSpeak = cleanTextForSpeech(text);
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-    // Try to get a better voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice =>
-      voice.name.includes('Google') && voice.lang.includes('en')
-    ) || voices.find(voice =>
-      voice.lang.includes('en-US') || voice.lang.includes('en-GB')
-    );
-
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = (event) => {
-      setIsSpeaking(false);
-      // Only show error if it's not a cancellation
-      if (event.error !== 'canceled' && event.error !== 'interrupted') {
+    setIsSpeaking(true);
+    try {
+      const audioBase64 = await aiService.textToSpeech(text);
+      
+      const audioElement = document.getElementById('tts-audio-question') as HTMLAudioElement || document.createElement('audio');
+      audioElement.id = 'tts-audio-question';
+      audioElement.src = `data:audio/mpeg;base64,${audioBase64}`;
+      
+      audioElement.onended = () => setIsSpeaking(false);
+      audioElement.onerror = () => {
+        setIsSpeaking(false);
         toast({
           title: "Voice Error",
           description: "Failed to play voice. Please try again.",
           variant: "destructive",
         });
-      }
-    };
+      };
 
-    window.speechSynthesis.speak(utterance);
-  };
-
-  const cleanTextForSpeech = (text: string): string => {
-    let cleaned = text;
-
-    // Remove code blocks
-    cleaned = cleaned.replace(/```[\s\S]*?```/g, ' code example. ');
-
-    // Remove inline code
-    cleaned = cleaned.replace(/`[^`]+`/g, ' ');
-
-    // Remove markdown headers
-    cleaned = cleaned.replace(/#{1,6}\s+/g, '');
-
-    // Remove markdown bold/italic
-    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
-    cleaned = cleaned.replace(/\*([^*]+)\*/g, '$1');
-    cleaned = cleaned.replace(/__([^_]+)__/g, '$1');
-    cleaned = cleaned.replace(/_([^_]+)_/g, '$1');
-
-    // Remove markdown links - keep link text
-    cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-
-    // Remove bullet points
-    cleaned = cleaned.replace(/^[\s]*[-*+]\s+/gm, '');
-
-    // Remove numbered lists
-    cleaned = cleaned.replace(/^[\s]*\d+\.\s+/gm, '');
-
-    // Remove extra whitespace
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-
-    // Limit length to avoid very long speech
-    if (cleaned.length > 1000) {
-      cleaned = cleaned.substring(0, 1000) + '... and more.';
+      await audioElement.play();
+    } catch (error) {
+      setIsSpeaking(false);
+      toast({
+        title: "Voice Error",
+        description: "Failed to generate voice. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    return cleaned;
   };
 
   if (loading) {
