@@ -373,7 +373,7 @@ Provide a thorough, educational response that helps the developer truly understa
       // Find answer with most upvotes
       let topAnswer = null;
       let maxUpvotes = 0;
-      
+
       if (answers && answers.length > 0) {
         context += `Answers (${answers.length}):\n\n`;
         answers.forEach((answer, index) => {
