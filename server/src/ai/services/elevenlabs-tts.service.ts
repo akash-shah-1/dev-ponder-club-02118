@@ -6,7 +6,7 @@ import axios from 'axios';
 export class ElevenLabsTtsService {
   private readonly logger = new Logger(ElevenLabsTtsService.name);
   private readonly apiKey: string;
-  private readonly voiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam - natural male voice
+  private readonly voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Bella - natural female voice
 
   constructor(private configService: ConfigService) {
     this.apiKey = this.configService.get<string>('ELEVENLABS_API_KEY');
