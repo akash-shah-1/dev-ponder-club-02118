@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/avatar";
 import { aiService } from "@/api/services/ai.service";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
-import { SummaryModal } from "@/components/SummaryModal";
+import { SummaryDrawer } from "@/components/SummaryDrawer";
 
 interface QuestionDetailDrawerProps {
   open: boolean;
@@ -692,7 +692,7 @@ export const QuestionDetailDrawer = ({ open, onOpenChange, questionId }: Questio
       />
 
       {summary && (
-        <SummaryModal
+        <SummaryDrawer
           open={showSummaryModal}
           onOpenChange={setShowSummaryModal}
           summary={summary.summary}
