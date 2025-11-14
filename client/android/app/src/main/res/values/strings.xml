@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DevOverflow</string>
+    <string name="title_activity_main">DevOverflow</string>
+    <string name="package_name">com.devoverflow.app</string>
+    <string name="custom_url_scheme">com.devoverflow.app</string>
+</resources>
