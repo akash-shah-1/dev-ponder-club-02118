@@ -1,5 +1,5 @@
 import { Notification, CreateNotificationData, NotificationFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const notificationsService = {
   async getAll(userId: string, filters?: NotificationFilters): Promise<Notification[]> {

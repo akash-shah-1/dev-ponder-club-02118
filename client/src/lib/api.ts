@@ -1,101 +1,118 @@
 import { useAuth } from '@clerk/clerk-react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 class ApiClient {
-  private baseURL: string;
+    private baseURL: string;
+    private getToken?: () => Promise<string | null>;
+    private isInitialized = false;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
-  }
-
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-    token?: string
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    const response = await fetch(url, config);
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || `HTTP ${response.status}`);
+    constructor(baseURL: string) {
+        this.baseURL = baseURL;
     }
 
-    return response.json();
-  }
+    setAuthTokenGetter(getter: () => Promise<string | null>) {
+        this.getToken = getter;
+        this.isInitialized = true;
+    }
 
-  async get<T>(endpoint: string, token?: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' }, token);
-  }
+    isReady() {
+        return this.isInitialized;
+    }
 
-  async post<T>(endpoint: string, data: any, token?: string): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      },
-      token
-    );
-  }
+    private async getHeaders(): Promise<HeadersInit> {
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
 
-  async patch<T>(endpoint: string, data: any, token?: string): Promise<T> {
-    return this.request<T>(
-      endpoint,
-      {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      },
-      token
-    );
-  }
+        if (this.getToken) {
+            const token = await this.getToken();
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+        }
 
-  async delete<T>(endpoint: string, token?: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' }, token);
-  }
+        return headers;
+    }
+
+    async get<T>(endpoint: string): Promise<T> {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'GET',
+            headers: await this.getHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    async post<T>(endpoint: string, data?: any): Promise<T> {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'POST',
+            headers: await this.getHeaders(),
+            body: data ? JSON.stringify(data) : undefined,
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    async patch<T>(endpoint: string, data?: any): Promise<T> {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'PATCH',
+            headers: await this.getHeaders(),
+            body: data ? JSON.stringify(data) : undefined,
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    async put<T>(endpoint: string, data?: any): Promise<T> {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'PUT',
+            headers: await this.getHeaders(),
+            body: data ? JSON.stringify(data) : undefined,
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
+
+    async delete<T>(endpoint: string): Promise<T> {
+        const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: 'DELETE',
+            headers: await this.getHeaders(),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        return response.json();
+    }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(API_URL);
 
+// Hook to initialize API client with auth token
 export const useApiClient = () => {
-  const { getToken } = useAuth();
+    const { getToken } = useAuth();
 
-  const authenticatedRequest = async <T>(
-    method: 'get' | 'post' | 'patch' | 'delete',
-    endpoint: string,
-    data?: any
-  ): Promise<T> => {
-    const token = await getToken();
-    
-    switch (method) {
-      case 'get':
-        return apiClient.get<T>(endpoint, token || undefined);
-      case 'post':
-        return apiClient.post<T>(endpoint, data, token || undefined);
-      case 'patch':
-        return apiClient.patch<T>(endpoint, data, token || undefined);
-      case 'delete':
-        return apiClient.delete<T>(endpoint, token || undefined);
-      default:
-        throw new Error(`Unsupported method: ${method}`);
+    if (!apiClient.isReady()) {
+        apiClient.setAuthTokenGetter(() => getToken());
     }
-  };
 
-  return {
-    get: <T>(endpoint: string) => authenticatedRequest<T>('get', endpoint),
-    post: <T>(endpoint: string, data: any) => authenticatedRequest<T>('post', endpoint, data),
-    patch: <T>(endpoint: string, data: any) => authenticatedRequest<T>('patch', endpoint, data),
-    delete: <T>(endpoint: string) => authenticatedRequest<T>('delete', endpoint),
-  };
+    return apiClient;
 };

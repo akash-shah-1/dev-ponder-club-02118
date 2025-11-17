@@ -1,5 +1,5 @@
 import { Vote, VoteSummary, CreateVoteData } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const votingService = {
   async upvoteQuestion(questionId: string): Promise<void> {

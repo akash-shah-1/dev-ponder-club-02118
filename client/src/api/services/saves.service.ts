@@ -1,5 +1,5 @@
 import { SavedItem, CreateSaveData, UpdateSaveData, SavedItemFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const savesService = {
   async getSavedQuestions(userId: string): Promise<SavedItem[]> {

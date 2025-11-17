@@ -1,5 +1,5 @@
 import { Answer, Comment, CreateAnswerData, UpdateAnswerData, CreateCommentData } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const answersService = {
   async getAll(questionId?: string): Promise<Answer[]> {

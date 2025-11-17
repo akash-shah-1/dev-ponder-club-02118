@@ -10,15 +10,13 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { FollowsService } from './follows.service';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('follows')
 @Controller('follows')
 export class FollowsController {
   constructor(
     private followsService: FollowsService,
-    private usersService: UsersService,
   ) {}
 
   @Post('users/:userId')
@@ -27,10 +25,9 @@ export class FollowsController {
   @ApiOperation({ summary: 'Follow a user' })
   async followUser(
     @Param('userId') userId: string,
-    @CurrentUser() user: any,
+    @CurrentUserId() followerId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.followsService.followUser(dbUser.id, userId);
+    return this.followsService.followUser(followerId, userId);
   }
 
   @Delete('users/:userId')
@@ -39,10 +36,9 @@ export class FollowsController {
   @ApiOperation({ summary: 'Unfollow a user' })
   async unfollowUser(
     @Param('userId') userId: string,
-    @CurrentUser() user: any,
+    @CurrentUserId() followerId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.followsService.unfollowUser(dbUser.id, userId);
+    return this.followsService.unfollowUser(followerId, userId);
   }
 
   @Get('users/:userId/followers')
@@ -63,9 +59,8 @@ export class FollowsController {
   @ApiOperation({ summary: 'Check if current user is following another user' })
   async isFollowing(
     @Param('userId') userId: string,
-    @CurrentUser() user: any,
+    @CurrentUserId() currentUserId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.followsService.isFollowing(dbUser.id, userId);
+    return this.followsService.isFollowing(currentUserId, userId);
   }
 }

@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnswerDto, UpdateAnswerDto } from './dto/answer.dto';
+import { authorSelect } from '../prisma/prisma.includes';
+import { REPUTATION_ANSWER_CREATED, REPUTATION_ANSWER_ACCEPTED } from '../common/constants';
 
 @Injectable()
 export class AnswersService {
@@ -36,20 +38,13 @@ export class AnswersService {
         authorId,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
     });
 
     await this.prisma.user.update({
       where: { id: authorId },
-      data: { reputation: { increment: 5 } },
+      data: { reputation: { increment: REPUTATION_ANSWER_CREATED } },
     });
 
     return answer;
@@ -59,14 +54,7 @@ export class AnswersService {
     return this.prisma.answer.findMany({
       where: { questionId },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
       orderBy: [
         { isAccepted: 'desc' },
@@ -80,14 +68,7 @@ export class AnswersService {
     const answer = await this.prisma.answer.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         question: {
           select: {
             id: true,
@@ -123,14 +104,7 @@ export class AnswersService {
       where: { id },
       data: updateAnswerDto,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
     });
   }
@@ -172,34 +146,30 @@ export class AnswersService {
       throw new ForbiddenException('Only the question author can accept answers');
     }
 
-    await this.prisma.answer.updateMany({
-      where: { questionId: answer.questionId },
-      data: { isAccepted: false },
-    });
+    const acceptedAnswer = await this.prisma.$transaction(async (tx) => {
+      await tx.answer.updateMany({
+        where: { questionId: answer.questionId },
+        data: { isAccepted: false },
+      });
 
-    const acceptedAnswer = await this.prisma.answer.update({
-      where: { id },
-      data: { isAccepted: true },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
+      const updatedAnswer = await tx.answer.update({
+        where: { id },
+        data: { isAccepted: true },
+        include: {
+          author: authorSelect,
         },
-      },
-    });
+      });
 
-    await this.prisma.user.update({
-      where: { id: acceptedAnswer.authorId },
-      data: { reputation: { increment: 15 } },
-    });
+      await tx.user.update({
+        where: { id: updatedAnswer.authorId },
+        data: { reputation: { increment: REPUTATION_ANSWER_ACCEPTED } },
+      });
 
-    await this.prisma.question.update({
-      where: { id: answer.questionId },
-      data: { solved: true },
+      await tx.question.update({
+        where: { id: answer.questionId },
+        data: { solved: true },
+      });
+      return updatedAnswer;
     });
 
     // 🆕 Auto-generate embedding for accepted answer (non-blocking)
@@ -230,14 +200,7 @@ export class AnswersService {
             title: true,
           },
         },
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
       orderBy: { createdAt: 'desc' },
     });

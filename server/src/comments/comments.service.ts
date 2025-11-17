@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import { authorWithEmailSelect } from '../prisma/prisma.includes';
 
 @Injectable()
 export class CommentsService {
@@ -22,15 +23,7 @@ export class CommentsService {
         authorId: userId,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
   }
@@ -39,15 +32,7 @@ export class CommentsService {
     return this.prisma.comment.findMany({
       where: { answerId },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -57,15 +42,7 @@ export class CommentsService {
     const comment = await this.prisma.comment.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
 
@@ -93,15 +70,7 @@ export class CommentsService {
       where: { id },
       data: updateCommentDto,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
   }

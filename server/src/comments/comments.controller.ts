@@ -12,15 +12,13 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('comments')
 @Controller('comments')
 export class CommentsController {
   constructor(
     private commentsService: CommentsService,
-    private usersService: UsersService,
   ) {}
 
   @Post()
@@ -29,10 +27,9 @@ export class CommentsController {
   @ApiOperation({ summary: 'Create a comment' })
   async create(
     @Body() createCommentDto: CreateCommentDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.commentsService.create(createCommentDto, dbUser.id);
+    return this.commentsService.create(createCommentDto, userId);
   }
 
   @Get('answer/:answerId')
@@ -54,18 +51,16 @@ export class CommentsController {
   async update(
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.commentsService.update(id, updateCommentDto, dbUser.id);
+    return this.commentsService.update(id, updateCommentDto, userId);
   }
 
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete comment' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.commentsService.remove(id, dbUser.id);
+  async remove(@Param('id') id: string, @CurrentUserId() userId: string) {
+    return this.commentsService.remove(id, userId);
   }
 }

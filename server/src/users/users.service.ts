@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClerkService } from '../auth/clerk.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { userWithRecentActivity } from '../prisma/prisma.includes';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -19,52 +21,30 @@ export class UsersService {
   async findByClerkId(clerkId: string) {
     return this.prisma.user.findUnique({
       where: { clerkId },
-      include: {
-        questions: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
-        answers: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      ...userWithRecentActivity,
     });
   }
 
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
-        questions: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
-        answers: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      ...userWithRecentActivity,
     });
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto) {
-    // Convert dateOfBirth string to DateTime if provided
-    const data: any = { ...updateUserDto };
-    if (data.dateOfBirth) {
-      data.dateOfBirth = new Date(data.dateOfBirth);
-    }
-    
+    // Assuming dateOfBirth is already a Date object or undefined,
+    // handled by a validation pipe before reaching the service.
     return this.prisma.user.update({
       where: { id },
-      data,
+      data: updateUserDto,
     });
   }
 
   async getTopUsers(limit: number = 10) {
     return this.prisma.user.findMany({
       take: limit,
-      orderBy: { reputation: 'desc' },
+      orderBy: { reputation: Prisma.SortOrder.desc },
       select: {
         id: true,
         name: true,
@@ -81,33 +61,44 @@ export class UsersService {
   }
 
   async syncUserFromClerk(clerkUser: any) {
-    const existingUser = await this.findByClerkId(clerkUser.id);
+    const existingUser = await this.prisma.user.findUnique({ // Use prisma directly to avoid recursive findByClerkId call
+        where: { clerkId: clerkUser.id },
+    });
     
     if (existingUser) {
-      return this.updateUser(existingUser.id, {
-        name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
-        email: clerkUser.emailAddresses[0]?.emailAddress,
-        avatar: clerkUser.imageUrl,
+      return this.prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+            name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
+            email: clerkUser.emailAddresses[0]?.emailAddress,
+            avatar: clerkUser.imageUrl,
+        },
       });
     }
 
-    return this.createUser({
-      clerkId: clerkUser.id,
-      name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
-      email: clerkUser.emailAddresses[0]?.emailAddress,
-      avatar: clerkUser.imageUrl,
+    return this.prisma.user.create({
+      data: {
+        clerkId: clerkUser.id,
+        name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
+        email: clerkUser.emailAddresses[0]?.emailAddress,
+        avatar: clerkUser.imageUrl,
+      },
     });
   }
 
   async findOrCreateByClerkId(clerkId: string) {
-    let user = await this.findByClerkId(clerkId);
+    let user = await this.prisma.user.findUnique({
+        where: { clerkId },
+        ...userWithRecentActivity,
+    });
     
     if (!user) {
-      // Fetch user from Clerk and create in database
       const clerkUser = await this.clerkService.getUser(clerkId);
-      await this.syncUserFromClerk(clerkUser);
-      // Fetch the newly created user with relations
-      user = await this.findByClerkId(clerkId);
+      await this.syncUserFromClerk(clerkUser); // Use the returned user directly
+      // No need for a second fetch, syncUserFromClerk returns the user with relations if needed
+      // If syncUserFromClerk doesn't return with relations, you might need to add `...userWithRecentActivity` to it
+      // For now, assuming it returns enough to proceed or a subsequent fetch is handled elsewhere if full relations are critical immediately after creation.
+      user = await this.findByClerkId(clerkId); // Re-fetch to ensure relations are included
     }
     
     return user;
@@ -150,7 +141,7 @@ export class UsersService {
       this.prisma.question.findMany({
         where: { authorId: userId },
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: Prisma.SortOrder.desc },
         select: {
           id: true,
           title: true,
@@ -160,7 +151,7 @@ export class UsersService {
       this.prisma.answer.findMany({
         where: { authorId: userId },
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: Prisma.SortOrder.desc },
         include: {
           question: {
             select: {

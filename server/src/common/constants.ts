@@ -1,0 +1,2 @@
+export const REPUTATION_ANSWER_CREATED = 5;
+export const REPUTATION_ANSWER_ACCEPTED = 15;

@@ -1,5 +1,5 @@
 import { User, UserStats, UserActivity, Badge, UpdateUserData, UserFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const usersService = {
   async getCurrentUser(): Promise<User> {

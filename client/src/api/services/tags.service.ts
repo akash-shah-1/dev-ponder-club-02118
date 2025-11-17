@@ -1,5 +1,5 @@
 import { Tag, TagStats, CreateTagData, UpdateTagData, TagFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const tagsService = {
   async getAll(filters?: TagFilters): Promise<Tag[]> {

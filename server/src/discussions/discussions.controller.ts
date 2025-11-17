@@ -13,15 +13,13 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DiscussionsService } from './discussions.service';
 import { CreateDiscussionDto, UpdateDiscussionDto, CreateDiscussionReplyDto } from './dto/discussion.dto';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('discussions')
 @Controller('discussions')
 export class DiscussionsController {
   constructor(
     private discussionsService: DiscussionsService,
-    private usersService: UsersService,
   ) {}
 
   @Post()
@@ -30,10 +28,9 @@ export class DiscussionsController {
   @ApiOperation({ summary: 'Create a new discussion' })
   async create(
     @Body() createDiscussionDto: CreateDiscussionDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.discussionsService.create(createDiscussionDto, dbUser.id);
+    return this.discussionsService.create(createDiscussionDto, userId);
   }
 
   @Get()
@@ -55,19 +52,17 @@ export class DiscussionsController {
   async update(
     @Param('id') id: string,
     @Body() updateDiscussionDto: UpdateDiscussionDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.discussionsService.update(id, updateDiscussionDto, dbUser.id);
+    return this.discussionsService.update(id, updateDiscussionDto, userId);
   }
 
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete discussion' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.discussionsService.remove(id, dbUser.id);
+  async remove(@Param('id') id: string, @CurrentUserId() userId: string) {
+    return this.discussionsService.remove(id, userId);
   }
 
   @Post(':id/replies')
@@ -77,10 +72,9 @@ export class DiscussionsController {
   async addReply(
     @Param('id') discussionId: string,
     @Body() createReplyDto: CreateDiscussionReplyDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.discussionsService.addReply(discussionId, createReplyDto, dbUser.id);
+    return this.discussionsService.addReply(discussionId, createReplyDto, userId);
   }
 
   @Get(':id/replies')

@@ -1,5 +1,5 @@
 import { KnowledgeArticle, CreateArticleData, UpdateArticleData, ArticleFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const knowledgeService = {
   async getAll(filters?: ArticleFilters): Promise<KnowledgeArticle[]> {

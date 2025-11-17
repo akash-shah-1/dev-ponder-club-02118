@@ -109,6 +109,8 @@ model Tag {
   usageCount  Int    @default(0)
 
   questions Question[] @relation("QuestionTags")
+  discussions Discussion[] @relation("DiscussionTags")
+  knowledgeArticles KnowledgeArticle[] @relation("KnowledgeArticleTags")
   watchers  TagWatch[]
 
   @@map("tags")
@@ -188,7 +190,7 @@ model Discussion {
   content   String
   authorId  String
   category  String
-  tags      String[]
+  tags      Tag[]      @relation("DiscussionTags")
   views     Int      @default(0)
   upvotes   Int      @default(0)
   isPinned  Boolean  @default(false)
@@ -260,7 +262,7 @@ model KnowledgeArticle {
   content     String
   description String?
   category    String?
-  tags        String[]
+  tags        Tag[]
   authorId    String
   views       Int      @default(0)
   upvotes     Int      @default(0)

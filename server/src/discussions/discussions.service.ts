@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDiscussionDto, UpdateDiscussionDto, CreateDiscussionReplyDto } from './dto/discussion.dto';
+import { authorSelect } from '../prisma/prisma.includes';
 
 @Injectable()
 export class DiscussionsService {
@@ -14,14 +15,7 @@ export class DiscussionsService {
         authorId,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         _count: {
           select: {
             replies: true,
@@ -48,14 +42,7 @@ export class DiscussionsService {
     return this.prisma.discussion.findMany({
       where,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         _count: {
           select: {
             replies: true,
@@ -73,34 +60,13 @@ export class DiscussionsService {
     const discussion = await this.prisma.discussion.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         replies: {
           include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                reputation: true,
-              },
-            },
+            author: authorSelect,
             childReplies: {
               include: {
-                author: {
-                  select: {
-                    id: true,
-                    name: true,
-                    avatar: true,
-                    reputation: true,
-                  },
-                },
+                author: authorSelect,
               },
             },
           },
@@ -145,14 +111,7 @@ export class DiscussionsService {
       where: { id },
       data: updateDiscussionDto,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
     });
   }
@@ -193,14 +152,7 @@ export class DiscussionsService {
         parentReplyId: createReplyDto.parentReplyId,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
       },
     });
   }
@@ -209,24 +161,10 @@ export class DiscussionsService {
     return this.prisma.discussionReply.findMany({
       where: { discussionId },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         childReplies: {
           include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                reputation: true,
-              },
-            },
+            author: authorSelect,
           },
         },
       },

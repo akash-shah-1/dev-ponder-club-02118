@@ -13,15 +13,13 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto, UpdateQuestionDto, QuestionFiltersDto } from './dto/question.dto';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('questions')
 @Controller('questions')
 export class QuestionsController {
   constructor(
     private questionsService: QuestionsService,
-    private usersService: UsersService,
   ) {}
 
   @Post()
@@ -30,10 +28,9 @@ export class QuestionsController {
   @ApiOperation({ summary: 'Create a new question' })
   async create(
     @Body() createQuestionDto: CreateQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.questionsService.create(createQuestionDto, dbUser.id);
+    return this.questionsService.create(createQuestionDto, userId);
   }
 
   @Get()
@@ -71,27 +68,24 @@ export class QuestionsController {
   async update(
     @Param('id') id: string,
     @Body() updateQuestionDto: UpdateQuestionDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.questionsService.update(id, updateQuestionDto, dbUser.id);
+    return this.questionsService.update(id, updateQuestionDto, userId);
   }
 
   @Patch(':id/solve')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark question as solved' })
-  async markAsSolved(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.questionsService.markAsSolved(id, dbUser.id);
+  async markAsSolved(@Param('id') id: string, @CurrentUserId() userId: string) {
+    return this.questionsService.markAsSolved(id, userId);
   }
 
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete question' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.questionsService.remove(id, dbUser.id);
+  async remove(@Param('id') id: string, @CurrentUserId() userId: string) {
+    return this.questionsService.remove(id, userId);
   }
 }

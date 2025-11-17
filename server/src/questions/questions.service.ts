@@ -1,41 +1,61 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuestionDto, UpdateQuestionDto, QuestionFiltersDto } from './dto/question.dto';
+import { authorSelect } from '../prisma/prisma.includes';
+import { EmbeddingService } from '../ai/services/embedding.service';
 
 @Injectable()
 export class QuestionsService {
   private readonly logger = new Logger(QuestionsService.name);
-  private embeddingService: any; // Lazy loaded to avoid circular dependency
 
-  constructor(private prisma: PrismaService) { }
-
-  // Lazy load embedding service to avoid circular dependency
-  private async getEmbeddingService() {
-    if (!this.embeddingService) {
-      const { EmbeddingService } = await import('../ai/services/embedding.service');
-      const { ConfigService } = await import('@nestjs/config');
-      const configService = new ConfigService();
-      this.embeddingService = new EmbeddingService(this.prisma, configService);
-    }
-    return this.embeddingService;
-  }
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => EmbeddingService))
+    private embeddingService: EmbeddingService,
+  ) { }
 
   async create(createQuestionDto: CreateQuestionDto, authorId: string) {
-    const { tags, ...questionData } = createQuestionDto;
+    const { tags: rawTags, ...questionData } = createQuestionDto;
+    const tags = rawTags.map(tag => tag.toLowerCase());
 
-    const tagConnections = await Promise.all(
-      tags.map(async (tagName) => {
-        const tag = await this.prisma.tag.upsert({
-          where: { name: tagName.toLowerCase() },
-          update: { usageCount: { increment: 1 } },
-          create: {
-            name: tagName.toLowerCase(),
-            usageCount: 1
-          },
+    let tagConnections: { id: string }[] = [];
+
+    if (tags && tags.length > 0) {
+      // Find existing tags
+      const existingTags = await this.prisma.tag.findMany({
+        where: { name: { in: tags } },
+      });
+      const existingTagNames = new Set(existingTags.map(tag => tag.name));
+
+      // Identify new tags
+      const newTagNames = tags.filter(tagName => !existingTagNames.has(tagName));
+
+      // Create new tags (batch)
+      if (newTagNames.length > 0) {
+        await this.prisma.tag.createMany({
+          data: newTagNames.map(name => ({
+            name: name,
+            usageCount: 1,
+          })),
+          skipDuplicates: true, 
         });
-        return { id: tag.id };
-      })
-    );
+      }
+
+      // Update usage count for existing tags (batch)
+      if (existingTags.length > 0) {
+        await this.prisma.tag.updateMany({
+          where: { name: { in: Array.from(existingTagNames) } },
+          data: { usageCount: { increment: 1 } },
+        });
+      }
+
+      // Get all tag IDs (existing and newly created) for connection
+      const allTags = await this.prisma.tag.findMany({
+        where: { name: { in: tags } },
+        select: { id: true },
+      });
+      tagConnections = allTags.map(tag => ({ id: tag.id }));
+    }
 
     const question = await this.prisma.question.create({
       data: {
@@ -47,14 +67,7 @@ export class QuestionsService {
         },
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
         _count: {
           select: {
@@ -75,11 +88,10 @@ export class QuestionsService {
 
   private async generateEmbeddingAsync(question: any) {
     try {
-      const embeddingService = await this.getEmbeddingService();
       const tagNames = question.tags?.map(t => (typeof t === 'string' ? t : t.name)).join(', ') || '';
       const content = `${question.title}\n\n${question.description}\n\nTags: ${tagNames}`;
 
-      await embeddingService.createEmbedding('question', question.id, content);
+      await this.embeddingService.createEmbedding('question', question.id, content);
       this.logger.log(`✅ Generated embedding for question: ${question.id}`);
     } catch (error) {
       this.logger.error(`❌ Embedding generation failed: ${error.message}`);
@@ -116,14 +128,7 @@ export class QuestionsService {
       where,
       orderBy,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
         aiAnswer: {
           select: {
@@ -152,25 +157,11 @@ export class QuestionsService {
     const question = await this.prisma.question.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
         answers: {
           include: {
-            author: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-                reputation: true,
-              },
-            },
+            author: authorSelect,
           },
           orderBy: [
             { isAccepted: 'desc' },
@@ -218,23 +209,47 @@ export class QuestionsService {
       throw new ForbiddenException('You can only edit your own questions');
     }
 
-    const { tags, ...questionData } = updateQuestionDto;
+    const { tags: rawTags, ...questionData } = updateQuestionDto;
+    let tagConnections: { id: string }[] | undefined;
 
-    let tagConnections;
-    if (tags) {
-      tagConnections = await Promise.all(
-        tags.map(async (tagName) => {
-          const tag = await this.prisma.tag.upsert({
-            where: { name: tagName.toLowerCase() },
-            update: { usageCount: { increment: 1 } },
-            create: {
-              name: tagName.toLowerCase(),
-              usageCount: 1
-            },
-          });
-          return { id: tag.id };
-        })
-      );
+    if (rawTags && rawTags.length > 0) {
+      const tags = rawTags.map(tag => tag.toLowerCase());
+
+      // Find existing tags
+      const existingTags = await this.prisma.tag.findMany({
+        where: { name: { in: tags } },
+      });
+      const existingTagNames = new Set(existingTags.map(tag => tag.name));
+
+      // Identify new tags
+      const newTagNames = tags.filter(tagName => !existingTagNames.has(tagName));
+
+      // Create new tags (batch)
+      if (newTagNames.length > 0) {
+        await this.prisma.tag.createMany({
+          data: newTagNames.map(name => ({
+            name: name,
+            usageCount: 1,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Update usage count for existing tags (batch)
+      // Only increment for tags that were already existing and are being re-used
+      if (existingTags.length > 0) {
+        await this.prisma.tag.updateMany({
+          where: { name: { in: Array.from(existingTagNames) } },
+          data: { usageCount: { increment: 1 } },
+        });
+      }
+
+      // Get all tag IDs (existing and newly created) for connection
+      const allTags = await this.prisma.tag.findMany({
+        where: { name: { in: tags } },
+        select: { id: true },
+      });
+      tagConnections = allTags.map(tag => ({ id: tag.id }));
     }
 
     return this.prisma.question.update({
@@ -251,14 +266,7 @@ export class QuestionsService {
         }),
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
       },
     });
@@ -311,14 +319,7 @@ export class QuestionsService {
         { upvotes: 'desc' },
       ],
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
       },
     });
@@ -329,14 +330,7 @@ export class QuestionsService {
       where: { authorId: userId },
       orderBy: { createdAt: 'desc' },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorSelect,
         tags: true,
       },
     });

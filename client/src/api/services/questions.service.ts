@@ -1,5 +1,5 @@
 import { Question, CreateQuestionData, QuestionFilters, UpdateQuestionData } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const questionsService = {
   async getAll(filters?: QuestionFilters): Promise<Question[]> {

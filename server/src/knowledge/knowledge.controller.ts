@@ -13,15 +13,13 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { KnowledgeService } from './knowledge.service';
 import { CreateKnowledgeDto, UpdateKnowledgeDto, KnowledgeFiltersDto } from './dto/knowledge.dto';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('knowledge')
 @Controller('knowledge')
 export class KnowledgeController {
   constructor(
     private knowledgeService: KnowledgeService,
-    private usersService: UsersService,
   ) {}
 
   @Post()
@@ -30,10 +28,9 @@ export class KnowledgeController {
   @ApiOperation({ summary: 'Create a knowledge article' })
   async create(
     @Body() createKnowledgeDto: CreateKnowledgeDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.knowledgeService.create(createKnowledgeDto, dbUser.id);
+    return this.knowledgeService.create(createKnowledgeDto, userId);
   }
 
   @Get()
@@ -68,18 +65,16 @@ export class KnowledgeController {
   async update(
     @Param('id') id: string,
     @Body() updateKnowledgeDto: UpdateKnowledgeDto,
-    @CurrentUser() user: any,
+    @CurrentUserId() userId: string,
   ) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.knowledgeService.update(id, updateKnowledgeDto, dbUser.id);
+    return this.knowledgeService.update(id, updateKnowledgeDto, userId);
   }
 
   @Delete(':id')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete article' })
-  async remove(@Param('id') id: string, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.knowledgeService.remove(id, dbUser.id);
+  async remove(@Param('id') id: string, @CurrentUserId() userId: string) {
+    return this.knowledgeService.remove(id, userId);
   }
 }

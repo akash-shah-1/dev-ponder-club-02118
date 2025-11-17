@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateKnowledgeDto, UpdateKnowledgeDto, KnowledgeFiltersDto } from './dto/knowledge.dto';
+import { authorWithEmailSelect } from '../prisma/prisma.includes';
 
 @Injectable()
 export class KnowledgeService {
@@ -19,15 +20,7 @@ export class KnowledgeService {
         upvotes: 0,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
   }
@@ -54,15 +47,7 @@ export class KnowledgeService {
     return this.prisma.knowledgeArticle.findMany({
       where,
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -72,15 +57,7 @@ export class KnowledgeService {
     const article = await this.prisma.knowledgeArticle.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
 
@@ -123,15 +100,7 @@ export class KnowledgeService {
         readTime,
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
     });
   }
@@ -158,15 +127,7 @@ export class KnowledgeService {
     return this.prisma.knowledgeArticle.findMany({
       where: { status: 'published' },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
       orderBy: { views: 'desc' },
       take: limit,
@@ -180,15 +141,7 @@ export class KnowledgeService {
         status: 'published',
       },
       include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            reputation: true,
-          },
-        },
+        author: authorWithEmailSelect,
       },
       orderBy: { createdAt: 'desc' },
     });

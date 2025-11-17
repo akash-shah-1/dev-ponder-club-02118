@@ -1,5 +1,5 @@
 import { Discussion, DiscussionReply, CreateDiscussionData, UpdateDiscussionData, CreateDiscussionReplyData, DiscussionFilters } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api';
 
 export const discussionsService = {
   async getAll(filters?: DiscussionFilters): Promise<Discussion[]> {

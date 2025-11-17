@@ -3,24 +3,21 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VotesService } from './votes.service';
 import { CreateVoteDto, TargetType } from './dto/vote.dto';
 import { ClerkAuthGuard } from '../auth/guards/clerk-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { UsersService } from '../users/users.service';
+import { CurrentUserId } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('votes')
 @Controller('votes')
 export class VotesController {
   constructor(
     private votesService: VotesService,
-    private usersService: UsersService,
   ) {}
 
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Vote on question or answer' })
-  async vote(@Body() createVoteDto: CreateVoteDto, @CurrentUser() user: any) {
-    const dbUser = await this.usersService.findByClerkId(user.sub);
-    return this.votesService.vote(createVoteDto, dbUser.id);
+  async vote(@Body() createVoteDto: CreateVoteDto, @CurrentUserId() userId: string) {
+    return this.votesService.vote(createVoteDto, userId);
   }
 
   @Get(':targetId/status')

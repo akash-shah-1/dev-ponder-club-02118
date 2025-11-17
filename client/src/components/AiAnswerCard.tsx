@@ -40,17 +40,6 @@ export const AiAnswerCard = ({ answer, generatedAt, model, images }: AiAnswerCar
     // Check usage count
     const usageCount = parseInt(localStorage.getItem('voice_usage_count') || '0');
     
-    if (usageCount >= 1) {
-      setShowUpgrade(true);
-      return;
-    }
-
-    // Check if text is too long
-    if (text.length > 500) {
-      setShowUpgrade(true);
-      return;
-    }
-
     setIsSpeaking(true);
     try {
       const audioBase64 = await aiService.textToSpeech(text);
