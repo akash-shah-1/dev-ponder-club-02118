@@ -18,6 +18,7 @@ import Terms from "./Terms";
 import Privacy from "./Privacy";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AdminRoutes from "../admin/AdminRoutes";
+import VoiceChat from "./VoiceChat";
 
 export const AppRoutes = () => (
     <Routes>
@@ -32,6 +33,7 @@ export const AppRoutes = () => (
         <Route path="/collectives/:id" element={<CollectiveDetail />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/voice-chat" element={<ProtectedRoute><VoiceChat /></ProtectedRoute>} />
         <Route path="/help" element={<Help />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element="/signup" />

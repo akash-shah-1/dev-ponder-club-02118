@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, MessageCircle, BookOpen, Bookmark, Trophy, HelpCircle, User, LogOut } from "lucide-react";
+import { Search, Bell, Menu, Moon, Sun, Home, MessageSquare, MessageCircle, BookOpen, Bookmark, Trophy, HelpCircle, User, LogOut, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -135,6 +135,14 @@ const Navigation = () => {
                       <span className="text-sm font-medium">Leaderboard</span>
                     </Link>
                     <Link 
+                      to="/voice-chat" 
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <Mic className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm font-medium">Voice AI</span>
+                    </Link>
+                    <Link 
                       to="/help" 
                       onClick={() => setShowMobileMenu(false)}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent/50 transition-colors"
@@ -228,6 +236,12 @@ const Navigation = () => {
               <nav className="flex items-center gap-1 ml-auto">
                 <Link to="/leaderboard">
                   <Button variant="ghost" size="sm">Leaderboard</Button>
+                </Link>
+                <Link to="/voice-chat">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Mic className="h-4 w-4" />
+                    Voice AI
+                  </Button>
                 </Link>
                 <Link to="/help">
                   <Button variant="ghost" size="sm">Help</Button>
