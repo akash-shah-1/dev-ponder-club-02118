@@ -289,51 +289,11 @@ export default function VoiceChat() {
         </main>
       </div>
       
-      {/* Mobile Floating Voice Button */}
-      {isMobile && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
-          {!isCallActive ? (
-            <button
-              onClick={startCall}
-              disabled={isLoading}
-              className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-2xl hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {isLoading ? (
-                <Loader2 className="w-8 h-8 animate-spin" />
-              ) : (
-                <>
-                  <Phone className="w-8 h-8" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse" />
-                </>
-              )}
-            </button>
-          ) : (
-            <div className="flex flex-col items-center gap-3">
-              {/* Voice Sync Animation */}
-              <div className="relative">
-                {isSpeaking ? (
-                  <VoiceSyncAnimation />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
-                    <Mic className="w-8 h-8 text-white" />
-                  </div>
-                )}
-              </div>
-              
-              {/* End Call Button */}
-              <button
-                onClick={endCall}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full shadow-lg hover:shadow-red-500/50 transition-all"
-              >
-                <PhoneOff className="w-4 h-4" />
-                <span className="text-sm font-semibold">End</span>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-      
-      <MobileNav />
+      <MobileNav 
+        onVoiceClick={isCallActive ? endCall : startCall}
+        isVoiceActive={isCallActive && isSpeaking}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

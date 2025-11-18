@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       throw new UnauthorizedException('Database service not available');
     }
     
-    const user = await this.prisma.users.findUnique({ 
+    const user = await this.prisma.user.findUnique({ 
       where: { id: payload.sub },
       select: {
         id: true,

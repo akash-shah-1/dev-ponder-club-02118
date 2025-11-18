@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.local
+prisma/migrations
+src/**/*.test.ts
+src/**/*.spec.ts
+test/
+*.md
+!README.md

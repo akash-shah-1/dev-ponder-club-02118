@@ -12,15 +12,33 @@ export class AdminService {
   }
 
   async normalChat(prompt: string): Promise<string> {
-    try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
-    } catch (error) {
-      console.error('Error in normal chat:', error);
-      throw new InternalServerErrorException(`AI chat failed: ${error.message}`);
+    const models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+    
+    for (const modelName of models) {
+      try {
+        const model = this.genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+      } catch (error) {
+        console.error(`Error with model ${modelName}:`, error.message);
+        
+        // If it's a quota error and we have more models to try, continue
+        if (error.status === 429 && modelName !== models[models.length - 1]) {
+          console.log(`Trying next model...`);
+          continue;
+        }
+        
+        // If it's the last model or a different error, throw
+        if (modelName === models[models.length - 1]) {
+          throw new InternalServerErrorException(
+            `AI chat failed: All models exhausted. ${error.status === 429 ? 'API quota exceeded. Please check your Gemini API key or wait before trying again.' : error.message}`
+          );
+        }
+      }
     }
+    
+    throw new InternalServerErrorException('AI chat failed: No models available');
   }
 
   async runCrewAI(prompt: string, password?: string): Promise<any> {
