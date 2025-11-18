@@ -231,7 +231,7 @@ export default function VoiceChat() {
               </div>
 
               {/* Right Side - Conversation History */}
-              <div className="h-[calc(100vh-16rem)] lg:h-[calc(100vh-12rem)]">
+              <div className="h-[calc(100vh-16rem)] lg:h-[calc(100vh-22rem)]">
                 {messages.length > 0 ? (
                   <div className="bg-card rounded-2xl shadow-lg border border-border h-full flex flex-col">
                     <div className="p-4 lg:p-6 border-b border-border">
