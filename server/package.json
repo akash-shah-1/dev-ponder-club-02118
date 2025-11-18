@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "nest build",
-    "vercel-build": "prisma generate && nest build",
+    "render-build": "prisma generate && nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
