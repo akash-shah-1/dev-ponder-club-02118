@@ -1,144 +1,168 @@
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [vector]
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
 }
 
-model ai_answers {
-  id         String    @id
-  questionId String    @unique
-  answer     String
-  model      String
-  images     String[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime
-  questions  questions @relation(fields: [questionId], references: [id], onDelete: Cascade)
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  email       String   @unique
+  name        String
+  password    String? // New: Optional field for local password-based authentication (e.g., for custom admins)
+  avatar      String?
+  reputation  Int      @default(0)
+  isAdmin     Boolean  @default(false) // New field
+  bio         String?
+  location    String?
+  website     String?
+  githubUrl   String?
+  twitterUrl  String?
+  linkedinUrl String?
+  dateOfBirth DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions     Question[]
+  answers       Answer[]
+  votes         Vote[]
+  comments      Comment[]
+  saves         Save[]
+  notifications Notification[]
+  discussions   Discussion[]
+  discussionReplies DiscussionReply[]
+  knowledgeArticles KnowledgeArticle[]
+  followers     Follow[] @relation("UserFollowers")
+  following     Follow[] @relation("UserFollowing")
+  tagWatches    TagWatch[]
+
+  @@map("users")
 }
 
-model ai_embeddings {
-  id          String                 @id
-  contentType String
-  contentId   String
-  content     String
-  embedding   Unsupported("vector")?
-  metadata    Json?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime
+model Question {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  excerpt     String
+  authorId    String
+  category    String
+  solved      Boolean  @default(false)
+  views       Int      @default(0)
+  upvotes     Int      @default(0)
+  downvotes   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@unique([contentType, contentId])
+  author   User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  answers  Answer[]
+  aiAnswer AiAnswer?
+  tags     Tag[]      @relation("QuestionTags")
+  saves    Save[]
+  comments Comment[]
+
+  @@map("questions")
 }
 
-model ai_queries {
-  id         String   @id
-  questionId String
-  userId     String?
-  prompt     String
-  response   String
-  model      String
-  tokensUsed Int
-  confidence Float?
-  wasHelpful Boolean?
-  createdAt  DateTime @default(now())
-}
-
-model answers {
-  id            String     @id
+model Answer {
+  id            String   @id @default(cuid())
   content       String
   questionId    String
   authorId      String
-  isAccepted    Boolean    @default(false)
-  upvotes       Int        @default(0)
-  downvotes     Int        @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime
-  aiConfidence  Float?
+  isAccepted    Boolean  @default(false)
+  isAiGenerated Boolean  @default(false)
   aiModel       String?
-  isAiGenerated Boolean    @default(false)
-  users         users      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  questions     questions  @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  comments      comments[]
+  aiConfidence  Float?
+  upvotes       Int      @default(0)
+  downvotes     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  question Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@map("answers")
 }
 
-model comments {
-  id         String     @id
+model AiAnswer {
+  id          String   @id @default(cuid())
+  questionId  String   @unique
+  answer      String
+  model       String
+  images      String[] // Array of base64 image data URLs
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_answers")
+}
+
+model Tag {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  color       String?
+  usageCount  Int    @default(0)
+
+  questions Question[] @relation("QuestionTags")
+  discussions Discussion[] @relation("DiscussionTags")
+  knowledgeArticles KnowledgeArticle[] @relation("KnowledgeArticleTags")
+  watchers  TagWatch[]
+
+  @@map("tags")
+}
+
+model Vote {
+  id       String    @id @default(cuid())
+  type     VoteType
+  userId   String
+  targetId String
+  targetType TargetType
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId, targetType])
+  @@map("votes")
+}
+
+model Comment {
+  id         String   @id @default(cuid())
   content    String
   authorId   String
   questionId String?
   answerId   String?
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime
-  answers    answers?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
-  users      users      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  questions  questions? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer   Answer?   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
 }
 
-model discussion_replies {
-  id                       String               @id
-  content                  String
-  discussionId             String
-  authorId                 String
-  parentReplyId            String?
-  upvotes                  Int                  @default(0)
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime
-  users                    users                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  discussions              discussions          @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  discussion_replies       discussion_replies?  @relation("discussion_repliesTodiscussion_replies", fields: [parentReplyId], references: [id])
-  other_discussion_replies discussion_replies[] @relation("discussion_repliesTodiscussion_replies")
+model Save {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("saves")
 }
 
-model discussions {
-  id                 String               @id
-  title              String
-  content            String
-  authorId           String
-  category           String
-  views              Int                  @default(0)
-  upvotes            Int                  @default(0)
-  isPinned           Boolean              @default(false)
-  status             String               @default("open")
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime
-  discussion_replies discussion_replies[]
-  users              users                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags               tags[]               @relation("DiscussionTags")
-}
-
-model follows {
-  id                               String   @id
-  followerId                       String
-  followingId                      String
-  createdAt                        DateTime @default(now())
-  users_follows_followerIdTousers  users    @relation("follows_followerIdTousers", fields: [followerId], references: [id], onDelete: Cascade)
-  users_follows_followingIdTousers users    @relation("follows_followingIdTousers", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-}
-
-model knowledge_articles {
-  id          String   @id
-  title       String
-  content     String
-  description String?
-  category    String?
-  authorId    String
-  views       Int      @default(0)
-  upvotes     Int      @default(0)
-  readTime    Int      @default(5)
-  status      String   @default("draft")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
-  users       users    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  tags        tags[]   @relation("KnowledgeArticleTags")
-}
-
-model notifications {
-  id        String           @id
+model Notification {
+  id        String           @id @default(cuid())
   userId    String
   type      NotificationType
   title     String
@@ -146,106 +170,58 @@ model notifications {
   read      Boolean          @default(false)
   data      Json?
   createdAt DateTime         @default(now())
-  users     users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
-model questions {
-  id          String      @id
-  title       String
-  description String
-  excerpt     String
-  authorId    String
-  category    String
-  solved      Boolean     @default(false)
-  views       Int         @default(0)
-  upvotes     Int         @default(0)
-  downvotes   Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime
-  ai_answers  ai_answers?
-  answers     answers[]
-  comments    comments[]
-  users       users       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  saves       saves[]
-  tags        tags[]      @relation("QuestionTags")
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
 }
 
-model saves {
-  id         String    @id
-  userId     String
-  questionId String
-  createdAt  DateTime  @default(now())
-  questions  questions @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  users      users     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, questionId])
+enum TargetType {
+  QUESTION
+  ANSWER
 }
 
-model tag_watches {
-  id        String   @id
-  userId    String
-  tagId     String
+model Discussion {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  authorId  String
+  category  String
+  tags      Tag[]      @relation("DiscussionTags")
+  views     Int      @default(0)
+  upvotes   Int      @default(0)
+  isPinned  Boolean  @default(false)
+  status    String   @default("open")
   createdAt DateTime @default(now())
-  tags      tags     @relation(fields: [tagId], references: [id], onDelete: Cascade)
-  users     users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
 
-  @@unique([userId, tagId])
+  author  User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  replies DiscussionReply[]
+
+  @@map("discussions")
 }
 
-model tags {
-  id                 String               @id
-  name               String               @unique
-  description        String?
-  color              String?
-  usageCount         Int                  @default(0)
-  tag_watches        tag_watches[]
-  discussions        discussions[]        @relation("DiscussionTags")
-  knowledge_articles knowledge_articles[] @relation("KnowledgeArticleTags")
-  questions          questions[]          @relation("QuestionTags")
-}
+model DiscussionReply {
+  id           String   @id @default(cuid())
+  content      String
+  discussionId String
+  authorId     String
+  parentReplyId String?
+  upvotes      Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-model users {
-  id                                 String               @id
-  clerkId                            String               @unique
-  email                              String               @unique
-  name                               String
-  avatar                             String?
-  reputation                         Int                  @default(0)
-  bio                                String?
-  location                           String?
-  website                            String?
-  githubUrl                          String?
-  twitterUrl                         String?
-  linkedinUrl                        String?
-  createdAt                          DateTime             @default(now())
-  updatedAt                          DateTime
-  dateOfBirth                        DateTime?
-  isAdmin                            Boolean              @default(false)
-  password                           String?
-  answers                            answers[]
-  comments                           comments[]
-  discussion_replies                 discussion_replies[]
-  discussions                        discussions[]
-  follows_follows_followerIdTousers  follows[]            @relation("follows_followerIdTousers")
-  follows_follows_followingIdTousers follows[]            @relation("follows_followingIdTousers")
-  knowledge_articles                 knowledge_articles[]
-  notifications                      notifications[]
-  questions                          questions[]
-  saves                              saves[]
-  tag_watches                        tag_watches[]
-  votes                              votes[]
-}
+  discussion  Discussion        @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  author      User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentReply DiscussionReply?  @relation("ReplyToReply", fields: [parentReplyId], references: [id])
+  childReplies DiscussionReply[] @relation("ReplyToReply")
 
-model votes {
-  id         String     @id
-  type       VoteType
-  userId     String
-  targetId   String
-  targetType TargetType
-  createdAt  DateTime   @default(now())
-  users      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, targetId, targetType])
+  @@map("discussion_replies")
 }
 
 enum NotificationType {
@@ -256,12 +232,77 @@ enum NotificationType {
   MENTION
 }
 
-enum TargetType {
-  QUESTION
-  ANSWER
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
 }
 
-enum VoteType {
-  UPVOTE
-  DOWNVOTE
+model TagWatch {
+  id        String   @id @default(cuid())
+  userId    String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@map("tag_watches")
+}
+
+model KnowledgeArticle {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  description String?
+  category    String?
+  tags        Tag[]    @relation("KnowledgeArticleTags")
+  authorId    String
+  views       Int      @default(0)
+  upvotes     Int      @default(0)
+  readTime    Int      @default(5)
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_articles")
+}
+
+model AiQuery {
+  id           String   @id @default(cuid())
+  questionId   String
+  userId       String?
+  prompt       String
+  response     String
+  model        String
+  tokensUsed   Int
+  confidence   Float?
+  wasHelpful   Boolean?
+  createdAt    DateTime @default(now())
+
+  @@map("ai_queries")
+}
+
+model AiEmbedding {
+  id          String   @id @default(cuid())
+  contentType String
+  contentId   String
+  content     String
+  embedding   Unsupported("vector(768)")?  // Gemini text-embedding-004 uses 768 dimensions
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([contentType, contentId])
+  @@map("ai_embeddings")
 }
