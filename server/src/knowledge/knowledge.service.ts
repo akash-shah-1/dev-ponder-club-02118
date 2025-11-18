@@ -10,17 +10,23 @@ export class KnowledgeService {
   async create(createKnowledgeDto: CreateKnowledgeDto, authorId: string) {
     const wordCount = createKnowledgeDto.content.split(/\s+/).length;
     const readTime = Math.ceil(wordCount / 200);
+    
+    const { tags, ...articleData } = createKnowledgeDto;
 
     return this.prisma.knowledgeArticle.create({
       data: {
-        ...createKnowledgeDto,
+        ...articleData,
         authorId,
         readTime,
         views: 0,
         upvotes: 0,
+        tags: tags?.length ? {
+          connect: tags.map(tagId => ({ id: tagId }))
+        } : undefined,
       },
       include: {
         author: authorWithEmailSelect,
+        tags: true,
       },
     });
   }
@@ -93,14 +99,20 @@ export class KnowledgeService {
       readTime = Math.ceil(wordCount / 200);
     }
 
+    const { tags, ...articleData } = updateKnowledgeDto;
+
     return this.prisma.knowledgeArticle.update({
       where: { id },
       data: {
-        ...updateKnowledgeDto,
+        ...articleData,
         readTime,
+        tags: tags ? {
+          set: tags.map(tagId => ({ id: tagId }))
+        } : undefined,
       },
       include: {
         author: authorWithEmailSelect,
+        tags: true,
       },
     });
   }

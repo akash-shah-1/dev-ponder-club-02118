@@ -1,0 +1,6 @@
+crewai
+crewai-tools
+google-generativeai
+python-dotenv
+sqlalchemy
+psycopg2-binary # For PostgreSQL database introspection

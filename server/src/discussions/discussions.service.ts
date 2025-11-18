@@ -8,14 +8,19 @@ export class DiscussionsService {
   constructor(private prisma: PrismaService) {}
 
   async create(createDiscussionDto: CreateDiscussionDto, authorId: string) {
+    const { tags, ...discussionData } = createDiscussionDto;
+    
     return this.prisma.discussion.create({
       data: {
-        ...createDiscussionDto,
-        tags: createDiscussionDto.tags || [],
+        ...discussionData,
         authorId,
+        tags: tags?.length ? {
+          connect: tags.map(tagId => ({ id: tagId }))
+        } : undefined,
       },
       include: {
         author: authorSelect,
+        tags: true,
         _count: {
           select: {
             replies: true,
@@ -107,11 +112,19 @@ export class DiscussionsService {
       throw new ForbiddenException('You can only edit your own discussions');
     }
 
+    const { tags, ...discussionData } = updateDiscussionDto;
+
     return this.prisma.discussion.update({
       where: { id },
-      data: updateDiscussionDto,
+      data: {
+        ...discussionData,
+        tags: tags ? {
+          set: tags.map(tagId => ({ id: tagId }))
+        } : undefined,
+      },
       include: {
         author: authorSelect,
+        tags: true,
       },
     });
   }

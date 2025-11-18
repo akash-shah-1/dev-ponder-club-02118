@@ -14,8 +14,10 @@ model User {
   clerkId     String   @unique
   email       String   @unique
   name        String
+  password    String? // New: Optional field for local password-based authentication (e.g., for custom admins)
   avatar      String?
   reputation  Int      @default(0)
+  isAdmin     Boolean  @default(false) // New field
   bio         String?
   location    String?
   website     String?
@@ -262,7 +264,7 @@ model KnowledgeArticle {
   content     String
   description String?
   category    String?
-  tags        Tag[]
+  tags        Tag[]    @relation("KnowledgeArticleTags")
   authorId    String
   views       Int      @default(0)
   upvotes     Int      @default(0)

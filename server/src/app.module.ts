@@ -17,6 +17,8 @@ import { FollowsModule } from './follows/follows.module';
 import { TagWatchesModule } from './tag-watches/tag-watches.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { AiModule } from './ai/ai.module';
+import { AdminModule } from './admin/admin.module';
+import { AdminAuthModule } from './admin-auth/admin-auth.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { AiModule } from './ai/ai.module';
     TagWatchesModule,
     KnowledgeModule,
     AiModule,
+    AdminModule,
+    AdminAuthModule,
   ],
 })
 export class AppModule {}

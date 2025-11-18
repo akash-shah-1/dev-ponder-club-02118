@@ -17,6 +17,7 @@ import SignUp from "./SignUp";
 import Terms from "./Terms";
 import Privacy from "./Privacy";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import AdminRoutes from "../admin/AdminRoutes";
 
 export const AppRoutes = () => (
     <Routes>
@@ -33,10 +34,10 @@ export const AppRoutes = () => (
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/help" element={<Help />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signup" element="/signup" />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="/admin/*" element={<AdminRoutes />} />
         <Route path="*" element={<NotFound />} />
     </Routes>
 );
