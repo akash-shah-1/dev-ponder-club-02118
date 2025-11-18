@@ -4,6 +4,7 @@ import Vapi from "@vapi-ai/web";
 import Navigation from "@/components/Navigation";
 import Sidebar from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,6 +22,7 @@ export default function VoiceChat() {
   const [scrollOpacity, setScrollOpacity] = useState(1);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const vapiInstance = new Vapi(import.meta.env.VITE_VAPI_PUBLIC_KEY);
@@ -144,8 +146,8 @@ export default function VoiceChat() {
 
             {/* Main Layout - Split on Desktop, Stacked on Mobile */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {/* Left Side - Assistant Control */}
-              <div className="space-y-6">
+              {/* Left Side - Assistant Control (Hidden on Mobile) */}
+              <div className="hidden lg:block space-y-6">
                 {/* Voice Control Card */}
                 <div className="bg-card rounded-2xl shadow-lg border border-border p-6 lg:p-8 lg:sticky lg:top-6">
                   <div className="flex flex-col items-center">
@@ -229,7 +231,7 @@ export default function VoiceChat() {
               </div>
 
               {/* Right Side - Conversation History */}
-              <div className="lg:h-[calc(100vh-12rem)]">
+              <div className="h-[calc(100vh-16rem)] lg:h-[calc(100vh-12rem)]">
                 {messages.length > 0 ? (
                   <div className="bg-card rounded-2xl shadow-lg border border-border h-full flex flex-col">
                     <div className="p-4 lg:p-6 border-b border-border">
@@ -286,7 +288,75 @@ export default function VoiceChat() {
           </div>
         </main>
       </div>
+      
+      {/* Mobile Floating Voice Button */}
+      {isMobile && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50">
+          {!isCallActive ? (
+            <button
+              onClick={startCall}
+              disabled={isLoading}
+              className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-2xl hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {isLoading ? (
+                <Loader2 className="w-8 h-8 animate-spin" />
+              ) : (
+                <>
+                  <Phone className="w-8 h-8" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse" />
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              {/* Voice Sync Animation */}
+              <div className="relative">
+                {isSpeaking ? (
+                  <VoiceSyncAnimation />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/50">
+                    <Mic className="w-8 h-8 text-white" />
+                  </div>
+                )}
+              </div>
+              
+              {/* End Call Button */}
+              <button
+                onClick={endCall}
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-full shadow-lg hover:shadow-red-500/50 transition-all"
+              >
+                <PhoneOff className="w-4 h-4" />
+                <span className="text-sm font-semibold">End</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
       <MobileNav />
+    </div>
+  );
+}
+
+// Voice Sync Animation Component
+function VoiceSyncAnimation() {
+  return (
+    <div className="relative w-16 h-16 flex items-center justify-center">
+      {/* Outer pulse rings */}
+      <div className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />
+      <div className="absolute inset-0 rounded-full bg-green-500/20 animate-pulse" />
+      
+      {/* Main circle with bars */}
+      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center gap-1 shadow-lg shadow-green-500/50">
+        {/* Animated sound bars */}
+        <div className="flex items-center gap-0.5 h-8">
+          <div className="w-1 bg-white rounded-full animate-voice-bar-1" style={{ height: '40%' }} />
+          <div className="w-1 bg-white rounded-full animate-voice-bar-2" style={{ height: '60%' }} />
+          <div className="w-1 bg-white rounded-full animate-voice-bar-3" style={{ height: '80%' }} />
+          <div className="w-1 bg-white rounded-full animate-voice-bar-2" style={{ height: '60%' }} />
+          <div className="w-1 bg-white rounded-full animate-voice-bar-1" style={{ height: '40%' }} />
+        </div>
+      </div>
     </div>
   );
 }
