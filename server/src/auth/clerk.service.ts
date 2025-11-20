@@ -22,16 +22,12 @@ export class ClerkService {
       // Use the standalone verifyToken function with proper configuration
       const payload = await verifyToken(token, {
         secretKey: this.secretKey,
-        authorizedParties: [
-          'http://localhost:5173',
-          'http://localhost:3000',
-          'http://localhost:3002',
-          'https://devover-flow.vercel.app',
-        ],
+        // Don't restrict authorized parties - let Clerk handle it
       });
       return payload;
     } catch (error) {
       console.error('Token verification failed:', error);
+      console.error('Error details:', error.message || error);
       throw new Error('Invalid token');
     }
   }

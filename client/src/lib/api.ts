@@ -26,9 +26,12 @@ class ApiClient {
         };
 
         if (this.getToken) {
+            // Get token without template - Clerk will use default JWT
             const token = await this.getToken();
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
+            } else {
+                console.warn('No token available from Clerk');
             }
         }
 
